@@ -107,10 +107,12 @@ app.delete('/api/clientes/:nombre', async (req, res) => {
     res.json({ status: "eliminado" });
 });
 
-// --- SERVIR FRONTEND ---
+// --- SERVIR FRONTEND (CÓDIGO CORREGIDO) ---
 const path = require('path');
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+app.use(express.static(__dirname)); 
+
+app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'index.html'));
 });
 
 // CONFIGURACIÓN PARA RENDER (IMPORTANTE)
@@ -118,3 +120,4 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor funcionando en puerto ${PORT}`);
 });
+
