@@ -1,115 +1,120 @@
+require('dotenv').config();
 const express = require('express');
-const { MongoClient } = require('mongodb');
-const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 const cors = require('cors');
-const dotenv = require('dotenv');
 
-dotenv.config();
 const app = express();
-const PORT = 3001;
-
+app.use(express.json());
 app.use(cors());
-app.use(bodyParser.json());
 
-let db;
-const client = new MongoClient(process.env.MONGO_URI);
+// Conexión a MongoDB
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ Conectado a MongoDB Atlas"))
+  .catch(err => console.error("❌ Error de conexión:", err));
 
-async function conectarDB() {
-    try {
-        await client.connect();
-        db = client.db('verdureria');
-        console.log("✅ Servidor vinculado a MongoDB");
-    } catch (error) { console.error("❌ Error de conexión:", error.message); }
-}
-conectarDB();
+// Esquema de Clientes
+const clienteSchema = new mongoose.Schema({
+    nombre: { type: String, unique: true, uppercase: true },
+    telefono: String,
+    deuda: { type: Number, default: 0 }
+});
+const Cliente = mongoose.model('Cliente', clienteSchema);
 
-// --- RUTAS DE PROVEEDORES ---
+// Esquema de Proveedores/Terceros
+const proveedorSchema = new mongoose.Schema({
+    nombre: { type: String, unique: true, uppercase: true },
+    saldoDeuda: { type: Number, default: 0 },
+    historial: [{ fecha: Date, detalle: String, movimiento: Number }]
+});
+const Proveedor = mongoose.model('Proveedor', proveedorSchema);
+
+// Esquema de Operaciones
+const operacionSchema = new mongoose.Schema({
+    cliente: String,
+    compra: Number,
+    pago: Number,
+    metodo: String,
+    destino: String,
+    fecha: Date
+});
+const Operacion = mongoose.model('Operacion', operacionSchema);
+
+// --- RUTAS API ---
+
+app.get('/api/sugerencias/:query', async (req, res) => {
+    const regex = new RegExp(req.params.query, 'i');
+    const sugerencias = await Cliente.find({ $or: [{ nombre: regex }, { telefono: regex }] }).limit(5);
+    res.json(sugerencias);
+});
+
+app.get('/api/clientes/:nombre', async (req, res) => {
+    let c = await Cliente.findOne({ nombre: req.params.nombre.toUpperCase() });
+    if (!c) c = await Cliente.create({ nombre: req.params.nombre.toUpperCase(), deuda: 0 });
+    res.json(c);
+});
+
+app.post('/api/operaciones', async (req, res) => {
+    const { cliente, compra, pago, metodo, destino, fecha } = req.body;
+    
+    // 1. Actualizar Deuda Cliente
+    const diff = compra - pago;
+    await Cliente.findOneAndUpdate({ nombre: cliente }, { $inc: { deuda: diff } });
+
+    // 2. Si es transferencia a proveedor, descontar de su deuda
+    if (metodo === 'TRANSFERENCIA' && destino !== 'GENERAL') {
+        await Proveedor.findOneAndUpdate(
+            { nombre: destino },
+            { 
+                $inc: { saldoDeuda: -pago },
+                $push: { historial: { fecha, detalle: `Pago de ${cliente}`, movimiento: -pago } }
+            }
+        );
+    }
+
+    const nuevaOp = new Operacion(req.body);
+    await nuevaOp.save();
+    res.json({ status: "ok" });
+});
+
 app.get('/api/proveedores', async (req, res) => {
-    try {
-        const provs = await db.collection('proveedores').find().toArray();
-        res.json(provs);
-    } catch (error) { res.status(500).json([]); }
+    const provs = await Proveedor.find();
+    res.json(provs);
 });
 
 app.post('/api/proveedores/ajuste', async (req, res) => {
     const { nombre, monto, motivo } = req.body;
-    const fecha = new Date();
-    const montoNum = parseFloat(monto);
-    await db.collection('proveedores').updateOne(
+    const p = await Proveedor.findOneAndUpdate(
         { nombre: nombre.toUpperCase() },
         { 
-            $inc: { saldoDeuda: montoNum },
-            $push: { historial: { fecha, detalle: motivo || "Ajuste manual", movimiento: montoNum } }
+            $inc: { saldoDeuda: monto },
+            $push: { historial: { fecha: new Date(), detalle: motivo, movimiento: monto } }
         },
-        { upsert: true }
+        { upsert: true, new: true }
     );
-    res.json({ message: "OK" });
-});
-
-// --- RUTAS DE CLIENTES Y OPERACIONES ---
-app.get('/api/sugerencias/:busqueda', async (req, res) => {
-    try {
-        const texto = req.params.busqueda.toUpperCase();
-        const sugerencias = await db.collection('clientes').find({
-            $or: [{ nombre: { $regex: '^' + texto } }, { telefono: { $regex: texto } }]
-        }).limit(10).toArray();
-        res.json(sugerencias);
-    } catch (error) { res.status(500).json([]); }
-});
-
-app.get('/api/clientes/:nombre', async (req, res) => {
-    try {
-        const nombre = req.params.nombre.toUpperCase();
-        let cliente = await db.collection('clientes').findOne({ nombre });
-        if (!cliente) {
-            cliente = { nombre, telefono: "", deuda: 0 };
-            await db.collection('clientes').insertOne(cliente);
-        }
-        res.json(cliente);
-    } catch (error) { res.status(500).json({ error: error.message }); }
-});
-
-app.post('/api/operaciones', async (req, res) => {
-    try {
-        const { cliente, compra, pago, metodo, destino, fecha } = req.body;
-        const fechaFinal = new Date(fecha + "T12:00:00");
-        const pagoNum = parseFloat(pago);
-
-        // 1. Registro movimiento
-        await db.collection('movimientos').insertOne({ cliente, compra, pago: pagoNum, metodo, destino, fecha: fechaFinal });
-        
-        // 2. Actualizar deuda cliente
-        await db.collection('clientes').updateOne({ nombre: cliente }, { $inc: { deuda: (compra - pagoNum) } });
-
-        // 3. Si es Transferencia, descontar de la deuda al proveedor
-        if (metodo === 'TRANSFERENCIA' && destino !== 'GENERAL') {
-            await db.collection('proveedores').updateOne(
-                { nombre: destino.toUpperCase() },
-                { 
-                    $inc: { saldoDeuda: -pagoNum },
-                    $push: { historial: { fecha: fechaFinal, detalle: `Pago de cliente: ${cliente}`, movimiento: -pagoNum } }
-                }
-            );
-        }
-        res.json({ message: "OK" });
-    } catch (error) { res.status(500).json({ error: error.message }); }
-});
-
-app.get('/api/deudores', async (req, res) => {
-    try {
-        const deudores = await db.collection('clientes').find({ deuda: { $gt: 0 } }).sort({ deuda: -1 }).toArray();
-        res.json(deudores);
-    } catch (error) { res.status(500).json([]); }
+    res.json(p);
 });
 
 app.get('/api/reporte', async (req, res) => {
     const { inicio, fin } = req.query;
-    try {
-        const fInicio = new Date(inicio + "T00:00:00");
-        const fFin = new Date(fin + "T23:59:59");
-        const movimientos = await db.collection('movimientos').find({ fecha: { $gte: fInicio, $lte: fFin } }).toArray();
-        res.json(movimientos);
-    } catch (error) { res.status(500).json([]); }
+    const ops = await Operacion.find({
+        fecha: { $gte: new Date(inicio), $lte: new Date(fin) }
+    });
+    res.json(ops);
 });
 
-app.listen(PORT, () => console.log(`🚀 Servidor en puerto ${PORT}`));
+app.delete('/api/clientes/:nombre', async (req, res) => {
+    await Cliente.findOneAndDelete({ nombre: req.params.nombre });
+    res.json({ status: "eliminado" });
+});
+
+// --- SERVIR FRONTEND ---
+const path = require('path');
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// CONFIGURACIÓN PARA RENDER (IMPORTANTE)
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Servidor funcionando en puerto ${PORT}`);
+});
