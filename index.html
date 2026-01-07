@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión Verdurería Pro</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; display: flex; justify-content: center; }
+        .contenedor { width: 100%; max-width: 500px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .seccion { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 15px; position: relative; }
+        h2, h4 { text-align: center; color: #2e7d32; margin-top: 0; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px; }
+        .btn-verde { background: #28a745; color: white; }
+        .btn-azul { background: #007bff; color: white; }
+        .btn-rojo { background: #d32f2f; color: white; }
+        .deuda-box { font-size: 32px; color: red; text-align: center; font-weight: bold; background: #fff5f5; padding: 10px; border: 1px solid #feb2b2; margin: 10px 0; }
+        #sugerencias { position: absolute; background: white; border: 1px solid #ccc; width: 93%; z-index: 100; border-radius: 5px; display: none; }
+        .sug-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        .reporte-lista { list-style: none; padding: 0; margin-top: 10px; }
+        .reporte-lista li { padding: 8px 0; border-bottom: 1px dashed #ccc; display: flex; justify-content: space-between; font-size: 14px; }
+        #bloqueo { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:999; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+    </style>
+</head>
+<body>
+
+<div id="bloqueo">
+    <h2>🔒 Acceso Requerido</h2>
+    <input type="password" id="passAcceso" placeholder="Introduce la clave" style="width: 250px; text-align: center;">
+    <button class="btn btn-verde" style="width: 250px;" onclick="validarAcceso()">ENTRAR</button>
+</div>
+
+<div class="contenedor" id="contenidoWeb" style="display:none;">
+    <h2>🥦 Gestión Verdurería</h2>
+
+    <div class="seccion">
+        <label>🔍 Buscar Cliente:</label>
+        <input type="text" id="inputNombre" placeholder="Nombre o Tel..." oninput="autoCompletar()" autocomplete="off">
+        <div id="sugerencias"></div>
+        <button class="btn btn-verde" onclick="buscarCliente()">ABRIR FICHA</button>
+    </div>
+
+    <div id="ficha" style="display:none;">
+        <div class="seccion">
+            <h3 id="nombreDisplay" style="text-align:center; margin:0;"></h3>
+            <div class="deuda-box">$ <span id="deudaDisplay">0</span></div>
+            
+            <label>📅 Fecha:</label>
+            <input type="date" id="fechaOp">
+            
+            <label>🛒 Compra ($):</label>
+            <input type="number" id="gasto" value="0" onfocus="if(this.value=='0')this.value=''">
+            
+            <label>💵 Pago hoy ($):</label>
+            <input type="number" id="pago" value="0" onfocus="if(this.value=='0')this.value=''">
+
+            <label>💳 Método de Pago:</label>
+            <select id="metodo" onchange="mostrarOpciones()">
+                <option value="EFECTIVO">Efectivo</option>
+                <option value="TRANSFERENCIA">Transferencia</option>
+                <option value="DEBITO">Tarjeta Débito</option>
+                <option value="CREDITO">Tarjeta Crédito</option>
+            </select>
+
+            <div id="divDestino" style="display:none;">
+                <label>🏦 ¿A quién se le transfiere?</label>
+                <select id="destino" onchange="mostrarSaldoDestino()"></select>
+                <p id="saldoDestinoInfo" style="margin:5px 0 0 0; color:#d32f2f; font-weight:bold; font-size:14px;"></p>
+            </div>
+            
+            <button class="btn btn-azul" onclick="guardar()">GUARDAR Y SEGUIR</button>
+            <button class="btn" style="background:#eee; color:#666; font-size:11px;" onclick="eliminarCliente()">BORRAR CLIENTE</button>
+        </div>
+    </div>
+
+    <div class="seccion" style="background: #eef2f7;">
+        <h4>📊 Cierre de Caja</h4>
+        <input type="date" id="cierreDia">
+        <button class="btn" style="background:#455a64; color:white;" onclick="generarCierre()">CALCULAR TOTALES</button>
+        <div id="resultadoCierre" style="display:none; margin-top: 10px;">
+            <p>💰 Efectivo: <b id="resEfe"></b></p>
+            <p>💳 Tarjetas: <b id="resTar"></b></p>
+            <ul class="reporte-lista" id="listaTransf"></ul>
+        </div>
+    </div>
+
+    <div class="seccion" style="background: #fff8e1; border-color: #ffe082;">
+        <h4>🚛 Proveedores y Terceros</h4>
+        <div id="listaProveedores"></div>
+        <hr>
+        <label>Añadir/Ajustar Deuda:</label>
+        <input type="text" id="nomProv" placeholder="Nombre Proveedor">
+        <input type="number" id="montoProv" placeholder="Monto total a transferir">
+        <input type="text" id="motProv" placeholder="Motivo">
+        <button class="btn btn-azul" onclick="ajustarProveedor()">ACTUALIZAR PROVEEDOR</button>
+    </div>
+
+    <div id="modalHistorial" style="display:none; position:fixed; top:5%; left:5%; width:90%; max-height:90%; background:white; z-index:1001; border:2px solid #333; padding:15px; overflow-y:auto;">
+        <h3 id="titHist"></h3>
+        <table border="1" style="width:100%; border-collapse: collapse; font-size:12px;">
+            <thead><tr><th>Fecha</th><th>Detalle</th><th>Monto</th></tr></thead>
+            <tbody id="bodyHist"></tbody>
+        </table>
+        <button class="btn btn-rojo" onclick="document.getElementById('modalHistorial').style.display='none'">CERRAR</button>
+    </div>
+</div>
+
+<script>
+    const API = "http://localhost:3001/api";
+    const CLAVE_MAESTRA = "2026";
+    let listaProvsGlobal = [];
+
+    function validarAcceso() {
+        if(document.getElementById('passAcceso').value === CLAVE_MAESTRA) {
+            document.getElementById('bloqueo').style.display = 'none';
+            document.getElementById('contenidoWeb').style.display = 'block';
+            cargarProveedores();
+        } else { alert("Clave incorrecta"); }
+    }
+
+    window.onload = () => {
+        document.getElementById('fechaOp').value = new Date().toISOString().split('T')[0];
+        document.getElementById('cierreDia').value = new Date().toISOString().split('T')[0];
+    }
+
+    async function cargarProveedores() {
+        const res = await fetch(`${API}/proveedores`);
+        listaProvsGlobal = await res.json();
+        let html = "", selectHtml = `<option value="GENERAL">-- ELEGIR PROVEEDOR --</option>`;
+        listaProvsGlobal.forEach(p => {
+            html += `<div style="padding:8px; border-bottom:1px solid #ccc; display:flex; justify-content:space-between;">
+                <span><b>${p.nombre}</b>: $${p.saldoDeuda}</span>
+                <button onclick="verDetalle('${p.nombre}')" style="font-size:10px;">HISTORIAL</button>
+            </div>`;
+            selectHtml += `<option value="${p.nombre}">${p.nombre} ($${p.saldoDeuda})</option>`;
+        });
+        document.getElementById('listaProveedores').innerHTML = html;
+        document.getElementById('destino').innerHTML = selectHtml;
+    }
+
+    function mostrarSaldoDestino() {
+        const nombre = document.getElementById('destino').value;
+        const p = listaProvsGlobal.find(x => x.nombre === nombre);
+        document.getElementById('saldoDestinoInfo').innerText = p ? `Saldo pendiente: $${p.saldoDeuda}` : "";
+    }
+
+    function mostrarOpciones() {
+        document.getElementById('divDestino').style.display = (document.getElementById('metodo').value === 'TRANSFERENCIA') ? 'block' : 'none';
+    }
+
+    async function autoCompletar() {
+        const t = document.getElementById('inputNombre').value;
+        const div = document.getElementById('sugerencias');
+        if(t.length < 1) { div.style.display='none'; return; }
+        const res = await fetch(`${API}/sugerencias/${t}`);
+        const data = await res.json();
+        div.innerHTML = data.map(c => `<div class="sug-item" onclick="seleccionar('${c.nombre}')"><span>${c.nombre}</span> <small>${c.telefono || ''}</small></div>`).join('');
+        div.style.display = 'block';
+    }
+
+    function seleccionar(n) {
+        document.getElementById('inputNombre').value = n;
+        document.getElementById('sugerencias').style.display = 'none';
+        buscarCliente();
+    }
+
+    async function buscarCliente() {
+        const n = document.getElementById('inputNombre').value.toUpperCase();
+        if(!n) return;
+        const res = await fetch(`${API}/clientes/${n}`);
+        const d = await res.json();
+        document.getElementById('nombreDisplay').innerText = d.nombre;
+        document.getElementById('deudaDisplay').innerText = d.deuda;
+        document.getElementById('gasto').value = "0";
+        document.getElementById('pago').value = "0";
+        document.getElementById('ficha').style.display = 'block';
+    }
+
+    async function guardar() {
+        const op = {
+            cliente: document.getElementById('nombreDisplay').innerText,
+            compra: parseFloat(document.getElementById('gasto').value) || 0,
+            pago: parseFloat(document.getElementById('pago').value) || 0,
+            metodo: document.getElementById('metodo').value,
+            destino: document.getElementById('destino').value,
+            fecha: document.getElementById('fechaOp').value
+        };
+        await fetch(`${API}/operaciones`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(op) });
+        alert("✅ Guardado correctamente");
+        // Limpiar sin recargar
+        document.getElementById('ficha').style.display = 'none';
+        document.getElementById('inputNombre').value = "";
+        cargarProveedores(); // Actualiza los saldos de proveedores
+    }
+
+    async function ajustarProveedor() {
+        const pass = prompt("Clave:");
+        if(pass !== CLAVE_MAESTRA) return alert("Clave incorrecta");
+        await fetch(`${API}/proveedores/ajuste`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                nombre: document.getElementById('nomProv').value.toUpperCase(),
+                monto: document.getElementById('montoProv').value,
+                motivo: document.getElementById('motProv').value
+            })
+        });
+        document.getElementById('nomProv').value = "";
+        document.getElementById('montoProv').value = "";
+        cargarProveedores();
+    }
+
+    async function verDetalle(nombre) {
+        const p = listaProvsGlobal.find(x => x.nombre === nombre);
+        document.getElementById('titHist').innerText = "Historial: " + nombre;
+        document.getElementById('bodyHist').innerHTML = p.historial.slice().reverse().map(h => `<tr><td>${new Date(h.fecha).toLocaleDateString()}</td><td>${h.detalle}</td><td>$${h.movimiento}</td></tr>`).join('');
+        document.getElementById('modalHistorial').style.display = 'block';
+    }
+
+    async function generarCierre() {
+        const dia = document.getElementById('cierreDia').value;
+        const res = await fetch(`${API}/reporte?inicio=${dia}&fin=${dia}`);
+        const movs = await res.json();
+        let efe = 0, deb = 0, cre = 0;
+        let transfs = {};
+        movs.forEach(m => {
+            if(m.metodo === 'EFECTIVO') efe += m.pago;
+            else if(m.metodo === 'DEBITO') deb += m.pago;
+            else if(m.metodo === 'CREDITO') cre += m.pago;
+            else if(m.metodo === 'TRANSFERENCIA') {
+                transfs[m.destino] = (transfs[m.destino] || 0) + m.pago;
+            }
+        });
+        document.getElementById('resEfe').innerText = "$" + efe;
+        document.getElementById('resTar').innerText = `D: $${deb} | C: $${cre}`;
+        document.getElementById('listaTransf').innerHTML = Object.keys(transfs).map(k => `<li>${k}: $${transfs[k]}</li>`).join('');
+        document.getElementById('resultadoCierre').style.display = 'block';
+    }
+
+    async function eliminarCliente() {
+        const pass = prompt("Clave para ELIMINAR:");
+        if(pass === CLAVE_MAESTRA) {
+            const n = document.getElementById('nombreDisplay').innerText;
+            await fetch(`${API}/clientes/${n}`, { method: 'DELETE' });
+            alert("Eliminado");
+            location.reload();
+        }
+    }
+</script>
+</body>
+</html>
