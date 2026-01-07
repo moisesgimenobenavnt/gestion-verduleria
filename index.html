@@ -1,62 +1,105 @@
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const path = require('path');
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión Verdurería Pro</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; display: flex; justify-content: center; }
+        .contenedor { width: 100%; max-width: 500px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .seccion { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 15px; position: relative; }
+        h2 { text-align: center; color: #2e7d32; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px; }
+        .btn-verde { background: #28a745; color: white; }
+        .btn-azul { background: #007bff; color: white; }
+        .deuda-box { font-size: 32px; color: red; text-align: center; font-weight: bold; background: #fff5f5; padding: 10px; border: 1px solid #feb2b2; margin: 10px 0; }
+        #sugerencias { position: absolute; background: white; border: 1px solid #ccc; width: 93%; z-index: 100; border-radius: 5px; display: none; }
+        .sug-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; }
+        #bloqueo { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:999; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+    </style>
+</head>
+<body>
 
-const app = express();
-app.use(express.json());
-app.use(cors());
+<div id="bloqueo">
+    <h2>🔒 Acceso Requerido</h2>
+    <input type="password" id="passAcceso" placeholder="Introduce la clave" style="width: 250px; text-align: center;">
+    <button class="btn btn-verde" style="width: 250px;" onclick="validarAcceso()">ENTRAR</button>
+</div>
 
-// Conexión a MongoDB usando la variable de entorno de Render
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ Conectado a MongoDB Atlas"))
-  .catch(err => console.error("❌ Error de conexión MongoDB:", err));
+<div class="contenedor" id="contenidoWeb" style="display:none;">
+    <h2>🥦 Gestión Verdurería</h2>
+    <div class="seccion">
+        <label>🔍 Buscar Cliente:</label>
+        <input type="text" id="inputNombre" placeholder="Escribe nombre..." oninput="autoCompletar()" autocomplete="off">
+        <div id="sugerencias"></div>
+        <button class="btn btn-verde" onclick="buscarCliente()">ABRIR FICHA</button>
+    </div>
+    <div id="ficha" style="display:none;">
+        <div class="seccion">
+            <h3 id="nombreDisplay" style="text-align:center;"></h3>
+            <div class="deuda-box">$ <span id="deudaDisplay">0</span></div>
+            <label>🛒 Compra ($):</label>
+            <input type="number" id="gasto" value="0">
+            <label>💵 Pago hoy ($):</label>
+            <input type="number" id="pago" value="0">
+            <button class="btn btn-azul" onclick="guardar()">GUARDAR</button>
+        </div>
+    </div>
+</div>
 
-// Esquemas de Base de Datos
-const Cliente = mongoose.model('Cliente', new mongoose.Schema({
-    nombre: { type: String, unique: true, uppercase: true },
-    telefono: String,
-    deuda: { type: Number, default: 0 }
-}));
+<script>
+    const API = "/api";
+    const CLAVE_MAESTRA = "2026";
 
-const Operacion = mongoose.model('Operacion', new mongoose.Schema({
-    cliente: String, compra: Number, pago: Number, metodo: String, fecha: String
-}));
+    function validarAcceso() {
+        const pass = document.getElementById('passAcceso').value;
+        if(pass === CLAVE_MAESTRA) {
+            document.getElementById('bloqueo').style.display = 'none';
+            document.getElementById('contenidoWeb').style.display = 'block';
+        } else { alert("Clave incorrecta"); }
+    }
 
-// --- RUTAS API ---
-app.get('/api/sugerencias/:query', async (req, res) => {
-    try {
-        const sugerencias = await Cliente.find({ nombre: new RegExp(req.params.query, 'i') }).limit(5);
-        res.json(sugerencias);
-    } catch (e) { res.status(500).json([]); }
-});
+    async function autoCompletar() {
+        const t = document.getElementById('inputNombre').value;
+        if(t.length < 1) { document.getElementById('sugerencias').style.display='none'; return; }
+        const res = await fetch(`${API}/sugerencias/${t}`);
+        const data = await res.json();
+        document.getElementById('sugerencias').innerHTML = data.map(c => `<div class="sug-item" onclick="seleccionar('${c.nombre}')">${c.nombre}</div>`).join('');
+        document.getElementById('sugerencias').style.display = 'block';
+    }
 
-app.get('/api/clientes/:nombre', async (req, res) => {
-    try {
-        let c = await Cliente.findOne({ nombre: req.params.nombre.toUpperCase() });
-        if (!c) c = await Cliente.create({ nombre: req.params.nombre.toUpperCase(), deuda: 0 });
-        res.json(c);
-    } catch (e) { res.status(500).json({ nombre: "Error", deuda: 0 }); }
-});
+    function seleccionar(n) {
+        document.getElementById('inputNombre').value = n;
+        document.getElementById('sugerencias').style.display = 'none';
+        buscarCliente();
+    }
 
-app.post('/api/operaciones', async (req, res) => {
-    try {
-        const { cliente, compra, pago } = req.body;
-        await Cliente.findOneAndUpdate({ nombre: cliente }, { $inc: { deuda: (compra - pago) } });
-        await new Operacion(req.body).save();
-        res.json({ status: "ok" });
-    } catch (e) { res.status(500).json({ status: "error" }); }
-});
+    async function buscarCliente() {
+        const n = document.getElementById('inputNombre').value.toUpperCase();
+        if(!n) return;
+        const res = await fetch(`${API}/clientes/${n}`);
+        const d = await res.json();
+        document.getElementById('nombreDisplay').innerText = d.nombre;
+        document.getElementById('deudaDisplay').innerText = d.deuda;
+        document.getElementById('ficha').style.display = 'block';
+    }
 
-// --- SERVIR EL FRONTEND (MUY IMPORTANTE) ---
-app.use(express.static(__dirname));
-app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'index.html'));
-});
-
-// Puerto dinámico para Render
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Servidor funcionando en puerto ${PORT}`);
-});
+    async function guardar() {
+        const op = {
+            cliente: document.getElementById('nombreDisplay').innerText,
+            compra: parseFloat(document.getElementById('gasto').value) || 0,
+            pago: parseFloat(document.getElementById('pago').value) || 0,
+            fecha: new Date().toLocaleDateString()
+        };
+        await fetch(`${API}/operaciones`, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(op) 
+        });
+        alert("✅ Guardado");
+        location.reload();
+    }
+</script>
+</body>
+</html>
