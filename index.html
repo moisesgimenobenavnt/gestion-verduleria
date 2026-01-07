@@ -2,24 +2,24 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión Comercial PRO</title>
+    <title>Gestión Comercial</title>
     <style>
         body { font-family: sans-serif; background: #f0f2f5; padding: 10px; display: flex; justify-content: center; }
-        .contenedor { width: 100%; max-width: 700px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .contenedor { width: 100%; max-width: 600px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .seccion { border: 1px solid #e0e0e0; padding: 15px; border-radius: 8px; margin-bottom: 20px; background: #fff; }
         h2, h3 { text-align: center; color: #1a531b; margin-top: 0; }
         label { display: block; margin-top: 10px; font-weight: bold; color: #444; }
-        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        .grid-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.3s; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        .btn { padding: 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 15px; width: 100%; margin-top: 10px; }
         .btn-verde { background: #28a745; color: white; }
         .btn-azul { background: #007bff; color: white; }
         .btn-rojo { background: #dc3545; color: white; }
         .btn-gris { background: #6c757d; color: white; }
-        .deuda-box { font-size: 28px; color: #d32f2f; text-align: center; font-weight: bold; background: #ffebee; padding: 15px; border-radius: 8px; margin: 10px 0; border: 1px solid #ffcdd2; }
+        .deuda-box { font-size: 32px; color: #d32f2f; text-align: center; font-weight: bold; background: #ffebee; padding: 15px; border-radius: 8px; border: 1px solid #ffcdd2; }
         #sugerencias { position: absolute; background: white; border: 1px solid #ccc; width: 90%; z-index: 100; border-radius: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .sug-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; }
-        .resumen-caja { background: #e8f5e9; padding: 15px; border-radius: 8px; display: flex; justify-content: space-around; text-align: center; font-size: 14px; }
+        .resumen-caja { background: #e8f5e9; padding: 15px; border-radius: 8px; margin-top: 10px; }
+        .flex-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #c8e6c9; }
         #bloqueo { position: fixed; top:0; left:0; width:100%; height:100%; background:#f0f2f5; z-index:999; display:flex; flex-direction:column; justify-content:center; align-items:center; }
         @media print { .no-print { display: none; } }
     </style>
@@ -29,175 +29,135 @@
 <div id="bloqueo" class="no-print">
     <h2>🔒 Acceso Requerido</h2>
     <input type="password" id="passAcceso" placeholder="Introduce la contraseña" style="width: 250px; text-align: center;">
-    <button class="btn btn-verde" style="width: 250px; margin-top:15px;" onclick="validarAcceso()">ENTRAR AL SISTEMA</button>
+    <button class="btn btn-verde" style="width: 250px;" onclick="validarAcceso()">ENTRAR</button>
 </div>
 
 <div class="contenedor" id="contenidoWeb" style="display:none;">
-    <div class="no-print">
-        <h2>🥦 Panel de Gestión</h2>
+    <h2 class="no-print">🥦 Panel de Gestión</h2>
+    
+    <div class="seccion no-print">
+        <label>🔍 Buscar por Nombre o Teléfono:</label>
+        <input type="text" id="inputBusqueda" placeholder="Ej: Ramon o 112344..." oninput="autoCompletar()" autocomplete="off">
+        <div id="sugerencias"></div>
+        <button class="btn btn-verde" onclick="buscarOCrear()">ABRIR FICHA / AÑADIR</button>
+    </div>
+
+    <div id="ficha" style="display:none;" class="seccion">
+        <h3 id="nombreDisplay"></h3>
+        <p id="telDisplay" style="text-align:center; color:#666;"></p>
+        <div class="deuda-box">$ <span id="deudaDisplay">0</span></div>
         
-        <div class="seccion">
-            <label>🔍 Buscar Cliente:</label>
-            <input type="text" id="inputNombre" placeholder="Nombre del cliente..." oninput="autoCompletar()" autocomplete="off">
-            <div id="sugerencias"></div>
-            <button class="btn btn-verde" style="width:100%; margin-top:10px;" onclick="buscarCliente()">ABRIR FICHA</button>
+        <div class="no-print">
+            <label>🛒 Compra ($):</label><input type="number" id="gasto" value="0">
+            <label>💵 Pago hoy ($):</label><input type="number" id="pago" value="0">
+            <label>💳 Método:</label>
+            <select id="metodo" onchange="verificarMetodo()">
+                <option value="EFECTIVO">Efectivo</option>
+                <option value="TRANSFERENCIA">Transferencia</option>
+                <option value="TARJETA">Tarjeta</option>
+            </select>
+            <div id="divDestino" style="display:none;">
+                <label>🏦 Enviar a:</label>
+                <select id="destinoProv"></select>
+            </div>
+            <button class="btn btn-azul" onclick="guardarOperacion()">GUARDAR MOVIMIENTO</button>
+            <button class="btn btn-gris" onclick="verHistorial()">VER HISTORIAL COMPLETO</button>
         </div>
-
-        <div class="seccion">
-            <h3>🏦 Receptores de Transferencia</h3>
-            <div id="listaReceptores" style="margin-bottom:10px;"></div>
-            <div style="display:flex; gap:5px;">
-                <input type="text" id="nuevoReceptor" placeholder="Nombre receptor" style="margin:0;">
-                <input type="number" id="montoReceptor" placeholder="Saldo" style="margin:0; width:120px;">
-                <button class="btn btn-azul" onclick="crearReceptor()">AÑADIR</button>
-            </div>
-        </div>
-
-        <div class="seccion">
-            <h3>📊 Resumen de Hoy</h3>
-            <div class="resumen-caja" id="resumenCaja">
-                <div>EFECTIVO<br><b id="cajaEfe">$0</b></div>
-                <div>TRANSFER.<br><b id="cajaTra">$0</b></div>
-                <div>TARJETAS<br><b id="cajaTar">$0</b></div>
-            </div>
-            <div class="grid-botones">
-                <button class="btn btn-gris" onclick="exportarDatos()">📥 BACKUP (EXCEL)</button>
-                <button class="btn btn-rojo" onclick="cerrarSesion()">🔓 SALIR / CERRAR</button>
-            </div>
+        <div id="historialSeccion" style="display:none; margin-top:20px;">
+            <div id="listaHistorial" style="font-size:13px;"></div>
+            <button class="btn btn-gris no-print" onclick="window.print()">🖨️ IMPRIMIR PDF</button>
         </div>
     </div>
 
-    <div id="ficha" style="display:none;">
-        <div class="seccion">
-            <h3 id="nombreDisplay"></h3>
-            <div class="deuda-box">$ <span id="deudaDisplay">0</span></div>
-            <div class="no-print">
-                <label>🛒 Compra ($):</label><input type="number" id="gasto" value="0">
-                <label>💵 Pago hoy ($):</label><input type="number" id="pago" value="0">
-                <label>💳 Método:</label>
-                <select id="metodo" onchange="verificarMetodo()">
-                    <option value="EFECTIVO">Efectivo</option>
-                    <option value="TRANSFERENCIA">Transferencia</option>
-                    <option value="TARJETA">Tarjeta</option>
-                </select>
-                <div id="divDestino" style="display:none;">
-                    <label>🏦 Receptor destino:</label>
-                    <select id="destinoProv"></select>
-                </div>
-                <div class="grid-botones">
-                    <button class="btn btn-azul" onclick="guardarOperacion()">GUARDAR</button>
-                    <button class="btn btn-gris" onclick="verHistorial()">HISTORIAL / PDF</button>
-                </div>
-            </div>
-            <div id="historialSeccion" style="display:none; margin-top:20px;">
-                <hr>
-                <div id="listaHistorial"></div>
-                <button class="btn btn-gris no-print" onclick="window.print()">🖨️ IMPRIMIR</button>
-            </div>
+    <div class="seccion no-print">
+        <h3>📊 Resumen de Hoy</h3>
+        <div class="resumen-caja" id="resumenCaja">
+            <div class="flex-row"><span>EFECTIVO:</span> <b id="cajaEfe">$0</b></div>
+            <div class="flex-row"><span>TRANSFERENCIA:</span> <b id="cajaTra">$0</b></div>
+            <div class="flex-row"><span>TARJETAS:</span> <b id="cajaTar">$0</b></div>
+            <div class="flex-row" style="color:red; border-top:2px solid #2e7d32; margin-top:5px;"><span>PENDIENTE DE COBRO:</span> <b id="cajaPendiente">$0</b></div>
         </div>
     </div>
+
+    <div class="seccion no-print">
+        <h3>🏦 Receptores de Dinero</h3>
+        <div id="listaReceptores"></div>
+        <hr>
+        <label>Añadir Nuevo:</label>
+        <input type="text" id="nuevoReceptor" placeholder="Nombre (ej: Gerardo)">
+        <input type="number" id="montoReceptor" placeholder="Saldo Inicial">
+        <button class="btn btn-azul" onclick="crearReceptor()">+ AÑADIR RECEPTOR</button>
+    </div>
+
+    <button class="btn btn-gris no-print" onclick="exportarDatos()">📥 DESCARGAR BACKUP (EXCEL)</button>
+    <button class="btn btn-rojo no-print" onclick="cerrarSesion()">🔓 CERRAR SESIÓN</button>
 </div>
 
 <script>
     const API = "/api";
-    const CLAVE_MAESTRA = "2026";
+    const CLAVE = "2026";
 
-    // Función de inicio automático
-    window.onload = () => {
-        if(localStorage.getItem('accesoVerduleria') === 'ok') {
-            mostrarSistema();
-        }
-    };
+    window.onload = () => { if(localStorage.getItem('verduOK') === 'si') mostrar(); };
 
     function validarAcceso() {
-        if(document.getElementById('passAcceso').value === CLAVE_MAESTRA) {
-            localStorage.setItem('accesoVerduleria', 'ok');
-            mostrarSistema();
-        } else { alert("Clave incorrecta"); }
+        if(document.getElementById('passAcceso').value === CLAVE) {
+            localStorage.setItem('verduOK', 'si');
+            mostrar();
+        } else alert("Error");
     }
 
-    function cerrarSesion() {
-        localStorage.removeItem('accesoVerduleria');
-        location.reload();
-    }
+    function cerrarSesion() { localStorage.removeItem('verduOK'); location.reload(); }
 
-    function mostrarSistema() {
+    function mostrar() {
         document.getElementById('bloqueo').style.display = 'none';
         document.getElementById('contenidoWeb').style.display = 'block';
-        refrescarDatos();
+        refrescarTodo();
     }
 
-    async function refrescarDatos() {
-        cargarReceptores();
-        cargarCajaHoy();
-    }
-
-    async function cargarReceptores() {
-        const res = await fetch(`${API}/receptores`);
-        const data = await res.json();
-        document.getElementById('listaReceptores').innerHTML = data.map(r => `
-            <div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #eee;">
+    async function refrescarTodo() {
+        // Cargar Receptores
+        const r1 = await fetch(`${API}/receptores`);
+        const recs = await r1.json();
+        document.getElementById('listaReceptores').innerHTML = recs.map(r => `
+            <div class="flex-row">
                 <span>${r.nombre}: <b>$${r.saldo}</b></span>
-                <button onclick="eliminarReceptor('${r._id}')" style="color:red; border:none; background:none; cursor:pointer;">❌</button>
-            </div>
-        `).join('');
-        document.getElementById('destinoProv').innerHTML = data.map(r => `<option value="${r.nombre}">${r.nombre}</option>`).join('');
-    }
+                <button onclick="borrarReceptor('${r._id}')" style="color:red; border:none; background:none; cursor:pointer;">❌</button>
+            </div>`).join('');
+        document.getElementById('destinoProv').innerHTML = recs.map(r => `<option value="${r.nombre}">${r.nombre}</option>`).join('');
 
-    async function crearReceptor() {
-        const pass = prompt("Introduce clave maestra para AÑADIR receptor:");
-        if(pass !== CLAVE_MAESTRA) return alert("Acceso denegado");
-        
-        const nombre = document.getElementById('nuevoReceptor').value;
-        const saldo = document.getElementById('montoReceptor').value;
-        if(!nombre) return;
-        await fetch(`${API}/receptores`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({nombre, saldo})
-        });
-        document.getElementById('nuevoReceptor').value = '';
-        refrescarDatos();
-    }
-
-    async function eliminarReceptor(id) {
-        const pass = prompt("Introduce clave maestra para ELIMINAR:");
-        if(pass !== CLAVE_MAESTRA) return alert("Acceso denegado");
-        
-        await fetch(`${API}/receptores/${id}`, { method: 'DELETE' });
-        refrescarDatos();
-    }
-
-    async function cargarCajaHoy() {
-        const res = await fetch(`${API}/caja-hoy`);
-        const data = await res.json();
-        document.getElementById('cajaEfe').innerText = `$${data.EFECTIVO || 0}`;
-        document.getElementById('cajaTra').innerText = `$${data.TRANSFERENCIA || 0}`;
-        document.getElementById('cajaTar').innerText = `$${data.TARJETA || 0}`;
+        // Cargar Caja
+        const r2 = await fetch(`${API}/caja-hoy`);
+        const caja = await r2.json();
+        document.getElementById('cajaEfe').innerText = `$${caja.EFECTIVO || 0}`;
+        document.getElementById('cajaTra').innerText = `$${caja.TRANSFERENCIA || 0}`;
+        document.getElementById('cajaTar').innerText = `$${caja.TARJETA || 0}`;
+        document.getElementById('cajaPendiente').innerText = `$${caja.PENDIENTE || 0}`;
     }
 
     async function autoCompletar() {
-        const t = document.getElementById('inputNombre').value;
-        if(t.length < 2) return;
-        const res = await fetch(`${API}/sugerencias/${t}`);
+        const val = document.getElementById('inputBusqueda').value;
+        if(val.length < 2) return;
+        const res = await fetch(`${API}/sugerencias/${val}`);
         const data = await res.json();
-        document.getElementById('sugerencias').innerHTML = data.map(c => `<div class="sug-item" onclick="seleccionar('${c.nombre}')">${c.nombre}</div>`).join('');
+        document.getElementById('sugerencias').innerHTML = data.map(c => `<div class="sug-item" onclick="cargarFicha('${c.nombre}','${c.telefono}')">${c.nombre} (${c.telefono})</div>`).join('');
         document.getElementById('sugerencias').style.display = 'block';
     }
 
-    function seleccionar(n) {
-        document.getElementById('inputNombre').value = n;
-        document.getElementById('sugerencias').style.display = 'none';
-        buscarCliente();
+    async function buscarOCrear() {
+        const val = document.getElementById('inputBusqueda').value.toUpperCase();
+        if(!val) return;
+        const res = await fetch(`${API}/clientes/${val}`);
+        const c = await res.json();
+        cargarFicha(c.nombre, c.telefono, c.deuda);
     }
 
-    async function buscarCliente() {
-        const n = document.getElementById('inputNombre').value.toUpperCase();
-        const res = await fetch(`${API}/clientes/${n}`);
-        const d = await res.json();
-        document.getElementById('nombreDisplay').innerText = d.nombre;
-        document.getElementById('deudaDisplay').innerText = d.deuda;
+    function cargarFicha(nom, tel, deu) {
+        document.getElementById('nombreDisplay').innerText = nom;
+        document.getElementById('telDisplay').innerText = tel || "Sin teléfono";
+        document.getElementById('deudaDisplay').innerText = deu || 0;
         document.getElementById('ficha').style.display = 'block';
+        document.getElementById('sugerencias').style.display = 'none';
+        document.getElementById('historialSeccion').style.display = 'none';
     }
 
     function verificarMetodo() {
@@ -205,21 +165,32 @@
     }
 
     async function guardarOperacion() {
-        const datos = {
+        const op = {
             cliente: document.getElementById('nombreDisplay').innerText,
             compra: parseFloat(document.getElementById('gasto').value) || 0,
             pago: parseFloat(document.getElementById('pago').value) || 0,
             metodo: document.getElementById('metodo').value,
             destino: document.getElementById('destinoProv').value
         };
-        await fetch(`${API}/operaciones`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(datos)
-        });
-        alert("✅ Guardado");
+        await fetch(`${API}/operaciones`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(op) });
+        alert("Guardado");
         document.getElementById('ficha').style.display = 'none';
-        refrescarDatos();
+        document.getElementById('inputBusqueda').value = '';
+        refrescarTodo();
+    }
+
+    async function crearReceptor() {
+        const p = prompt("Clave:"); if(p!==CLAVE) return;
+        const nombre = document.getElementById('nuevoReceptor').value;
+        const saldo = document.getElementById('montoReceptor').value;
+        await fetch(`${API}/receptores`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nombre, saldo}) });
+        refrescarTodo();
+    }
+
+    async function borrarReceptor(id) {
+        const p = prompt("Clave:"); if(p!==CLAVE) return;
+        await fetch(`${API}/receptores/${id}`, { method: 'DELETE' });
+        refrescarTodo();
     }
 
     async function verHistorial() {
@@ -227,17 +198,15 @@
         const res = await fetch(`${API}/historial/${n}`);
         const data = await res.json();
         document.getElementById('listaHistorial').innerHTML = data.map(h => `
-            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px;">
+            <div class="flex-row">
                 <span>${new Date(h.fecha).toLocaleDateString()}</span>
                 <span>${h.metodo}</span>
-                <span>Compra: $${h.compra} / Pago: $${h.pago}</span>
+                <span>+$${h.compra} / -$${h.pago}</span>
             </div>`).join('');
         document.getElementById('historialSeccion').style.display = 'block';
     }
 
-    async function exportarDatos() {
-        window.open(`${API}/exportar-clientes`);
-    }
+    function exportarDatos() { window.open(`${API}/exportar-clientes`); }
 </script>
 </body>
 </html>
