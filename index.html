@@ -1,174 +1,62 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Gestión Verdurería Pro</title>
-    <style>
-        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; display: flex; justify-content: center; }
-        .contenedor { width: 100%; max-width: 500px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .seccion { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 15px; position: relative; }
-        h2, h4 { text-align: center; color: #2e7d32; margin-top: 0; }
-        label { display: block; margin-top: 10px; font-weight: bold; }
-        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px; }
-        .btn-verde { background: #28a745; color: white; }
-        .btn-azul { background: #007bff; color: white; }
-        .btn-rojo { background: #d32f2f; color: white; }
-        .deuda-box { font-size: 32px; color: red; text-align: center; font-weight: bold; background: #fff5f5; padding: 10px; border: 1px solid #feb2b2; margin: 10px 0; }
-        #sugerencias { position: absolute; background: white; border: 1px solid #ccc; width: 93%; z-index: 100; border-radius: 5px; display: none; }
-        .sug-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
-        .reporte-lista { list-style: none; padding: 0; margin-top: 10px; }
-        .reporte-lista li { padding: 8px 0; border-bottom: 1px dashed #ccc; display: flex; justify-content: space-between; font-size: 14px; }
-        #bloqueo { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:999; display:flex; flex-direction:column; justify-content:center; align-items:center; }
-    </style>
-</head>
-<body>
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const path = require('path');
 
-<div id="bloqueo">
-    <h2>🔒 Acceso Requerido</h2>
-    <input type="password" id="passAcceso" placeholder="Introduce la clave" style="width: 250px; text-align: center;">
-    <button class="btn btn-verde" style="width: 250px;" onclick="validarAcceso()">ENTRAR</button>
-</div>
+const app = express();
+app.use(express.json());
+app.use(cors());
 
-<div class="contenedor" id="contenidoWeb" style="display:none;">
-    <h2>🥦 Gestión Verdurería</h2>
+// Conexión a MongoDB usando la variable de entorno de Render
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ Conectado a MongoDB Atlas"))
+  .catch(err => console.error("❌ Error de conexión MongoDB:", err));
 
-    <div class="seccion">
-        <label>🔍 Buscar Cliente:</label>
-        <input type="text" id="inputNombre" placeholder="Nombre o Tel..." oninput="autoCompletar()" autocomplete="off">
-        <div id="sugerencias"></div>
-        <button class="btn btn-verde" onclick="buscarCliente()">ABRIR FICHA</button>
-    </div>
+// Esquemas de Base de Datos
+const Cliente = mongoose.model('Cliente', new mongoose.Schema({
+    nombre: { type: String, unique: true, uppercase: true },
+    telefono: String,
+    deuda: { type: Number, default: 0 }
+}));
 
-    <div id="ficha" style="display:none;">
-        <div class="seccion">
-            <h3 id="nombreDisplay" style="text-align:center; margin:0;"></h3>
-            <div class="deuda-box">$ <span id="deudaDisplay">0</span></div>
-            <label>📅 Fecha:</label>
-            <input type="date" id="fechaOp">
-            <label>🛒 Compra ($):</label>
-            <input type="number" id="gasto" value="0">
-            <label>💵 Pago hoy ($):</label>
-            <input type="number" id="pago" value="0">
-            <label>💳 Método Pago:</label>
-            <select id="metodo" onchange="mostrarOpciones()">
-                <option value="EFECTIVO">Efectivo</option>
-                <option value="TRANSFERENCIA">Transferencia</option>
-                <option value="DEBITO">Débito</option>
-                <option value="CREDITO">Crédito</option>
-            </select>
-            <div id="divDestino" style="display:none;">
-                <label>🏦 ¿A quién se transfiere?</label>
-                <select id="destino" onchange="mostrarSaldoDestino()"></select>
-                <p id="saldoDestinoInfo" style="color:red; font-weight:bold;"></p>
-            </div>
-            <button class="btn btn-azul" onclick="guardar()">GUARDAR</button>
-        </div>
-    </div>
+const Operacion = mongoose.model('Operacion', new mongoose.Schema({
+    cliente: String, compra: Number, pago: Number, metodo: String, fecha: String
+}));
 
-    <div class="seccion" style="background: #eef2f7;">
-        <h4>📊 Cierre de Caja</h4>
-        <input type="date" id="cierreDia">
-        <button class="btn" style="background:#455a64; color:white;" onclick="generarCierre()">CALCULAR</button>
-        <div id="resultadoCierre" style="display:none;">
-            <p>Efectivo: <b id="resEfe"></b> | Tarjetas: <b id="resTar"></b></p>
-            <ul id="listaTransf" class="reporte-lista"></ul>
-        </div>
-    </div>
+// --- RUTAS API ---
+app.get('/api/sugerencias/:query', async (req, res) => {
+    try {
+        const sugerencias = await Cliente.find({ nombre: new RegExp(req.params.query, 'i') }).limit(5);
+        res.json(sugerencias);
+    } catch (e) { res.status(500).json([]); }
+});
 
-    <div class="seccion" style="background: #fff8e1;">
-        <h4>🚛 Proveedores</h4>
-        <div id="listaProveedores"></div>
-        <input type="text" id="nomProv" placeholder="Nombre">
-        <input type="number" id="montoProv" placeholder="Monto">
-        <button class="btn btn-azul" onclick="ajustarProveedor()">ACTUALIZAR</button>
-    </div>
-</div>
+app.get('/api/clientes/:nombre', async (req, res) => {
+    try {
+        let c = await Cliente.findOne({ nombre: req.params.nombre.toUpperCase() });
+        if (!c) c = await Cliente.create({ nombre: req.params.nombre.toUpperCase(), deuda: 0 });
+        res.json(c);
+    } catch (e) { res.status(500).json({ nombre: "Error", deuda: 0 }); }
+});
 
-<script>
-    const API = "https://gestion-verduleria.onrender.com/api";
-    const CLAVE_MAESTRA = "2026";
-    let listaProvsGlobal = [];
+app.post('/api/operaciones', async (req, res) => {
+    try {
+        const { cliente, compra, pago } = req.body;
+        await Cliente.findOneAndUpdate({ nombre: cliente }, { $inc: { deuda: (compra - pago) } });
+        await new Operacion(req.body).save();
+        res.json({ status: "ok" });
+    } catch (e) { res.status(500).json({ status: "error" }); }
+});
 
-    function validarAcceso() {
-        if(document.getElementById('passAcceso').value === CLAVE_MAESTRA) {
-            document.getElementById('bloqueo').style.display = 'none';
-            document.getElementById('contenidoWeb').style.display = 'block';
-            cargarProveedores();
-        } else { alert("Error"); }
-    }
+// --- SERVIR EL FRONTEND (MUY IMPORTANTE) ---
+app.use(express.static(__dirname));
+app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'index.html'));
+});
 
-    window.onload = () => {
-        document.getElementById('fechaOp').value = new Date().toISOString().split('T')[0];
-        document.getElementById('cierreDia').value = new Date().toISOString().split('T')[0];
-    }
-
-    async function cargarProveedores() {
-        const res = await fetch(`${API}/proveedores`);
-        listaProvsGlobal = await res.json();
-        let html = "", selectHtml = `<option value="GENERAL">-- ELEGIR --</option>`;
-        listaProvsGlobal.forEach(p => {
-            html += `<div>${p.nombre}: $${p.saldoDeuda}</div>`;
-            selectHtml += `<option value="${p.nombre}">${p.nombre} ($${p.saldoDeuda})</option>`;
-        });
-        document.getElementById('listaProveedores').innerHTML = html;
-        document.getElementById('destino').innerHTML = selectHtml;
-    }
-
-    async function autoCompletar() {
-        const t = document.getElementById('inputNombre').value;
-        if(t.length < 1) return;
-        const res = await fetch(`${API}/sugerencias/${t}`);
-        const data = await res.json();
-        document.getElementById('sugerencias').innerHTML = data.map(c => `<div class="sug-item" onclick="seleccionar('${c.nombre}')">${c.nombre}</div>`).join('');
-        document.getElementById('sugerencias').style.display = 'block';
-    }
-
-    function seleccionar(n) {
-        document.getElementById('inputNombre').value = n;
-        document.getElementById('sugerencias').style.display = 'none';
-        buscarCliente();
-    }
-
-    async function buscarCliente() {
-        const n = document.getElementById('inputNombre').value.toUpperCase();
-        const res = await fetch(`${API}/clientes/${n}`);
-        const d = await res.json();
-        document.getElementById('nombreDisplay').innerText = d.nombre;
-        document.getElementById('deudaDisplay').innerText = d.deuda;
-        document.getElementById('ficha').style.display = 'block';
-    }
-
-    async function guardar() {
-        const op = {
-            cliente: document.getElementById('nombreDisplay').innerText,
-            compra: parseFloat(document.getElementById('gasto').value) || 0,
-            pago: parseFloat(document.getElementById('pago').value) || 0,
-            metodo: document.getElementById('metodo').value,
-            destino: document.getElementById('destino').value,
-            fecha: document.getElementById('fechaOp').value
-        };
-        await fetch(`${API}/operaciones`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(op) });
-        alert("Guardado");
-        location.reload();
-    }
-
-    function mostrarOpciones() {
-        document.getElementById('divDestino').style.display = (document.getElementById('metodo').value === 'TRANSFERENCIA') ? 'block' : 'none';
-    }
-
-    async function ajustarProveedor() {
-        await fetch(`${API}/proveedores/ajuste`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                nombre: document.getElementById('nomProv').value.toUpperCase(),
-                monto: document.getElementById('montoProv').value,
-                motivo: "Ajuste manual"
-            })
-        });
-        location.reload();
-    }
-</script>
-</body>
-</html>
+// Puerto dinámico para Render
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Servidor funcionando en puerto ${PORT}`);
+});
