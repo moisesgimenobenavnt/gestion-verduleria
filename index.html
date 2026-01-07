@@ -44,64 +44,44 @@
         <div class="seccion">
             <h3 id="nombreDisplay" style="text-align:center; margin:0;"></h3>
             <div class="deuda-box">$ <span id="deudaDisplay">0</span></div>
-            
             <label>📅 Fecha:</label>
             <input type="date" id="fechaOp">
-            
             <label>🛒 Compra ($):</label>
-            <input type="number" id="gasto" value="0" onfocus="if(this.value=='0')this.value=''">
-            
+            <input type="number" id="gasto" value="0">
             <label>💵 Pago hoy ($):</label>
-            <input type="number" id="pago" value="0" onfocus="if(this.value=='0')this.value=''">
-
-            <label>💳 Método de Pago:</label>
+            <input type="number" id="pago" value="0">
+            <label>💳 Método Pago:</label>
             <select id="metodo" onchange="mostrarOpciones()">
                 <option value="EFECTIVO">Efectivo</option>
                 <option value="TRANSFERENCIA">Transferencia</option>
-                <option value="DEBITO">Tarjeta Débito</option>
-                <option value="CREDITO">Tarjeta Crédito</option>
+                <option value="DEBITO">Débito</option>
+                <option value="CREDITO">Crédito</option>
             </select>
-
             <div id="divDestino" style="display:none;">
-                <label>🏦 ¿A quién se le transfiere?</label>
+                <label>🏦 ¿A quién se transfiere?</label>
                 <select id="destino" onchange="mostrarSaldoDestino()"></select>
-                <p id="saldoDestinoInfo" style="margin:5px 0 0 0; color:#d32f2f; font-weight:bold; font-size:14px;"></p>
+                <p id="saldoDestinoInfo" style="color:red; font-weight:bold;"></p>
             </div>
-            
-            <button class="btn btn-azul" onclick="guardar()">GUARDAR Y SEGUIR</button>
-            <button class="btn" style="background:#eee; color:#666; font-size:11px;" onclick="eliminarCliente()">BORRAR CLIENTE</button>
+            <button class="btn btn-azul" onclick="guardar()">GUARDAR</button>
         </div>
     </div>
 
     <div class="seccion" style="background: #eef2f7;">
         <h4>📊 Cierre de Caja</h4>
         <input type="date" id="cierreDia">
-        <button class="btn" style="background:#455a64; color:white;" onclick="generarCierre()">CALCULAR TOTALES</button>
-        <div id="resultadoCierre" style="display:none; margin-top: 10px;">
-            <p>💰 Efectivo: <b id="resEfe"></b></p>
-            <p>💳 Tarjetas: <b id="resTar"></b></p>
-            <ul class="reporte-lista" id="listaTransf"></ul>
+        <button class="btn" style="background:#455a64; color:white;" onclick="generarCierre()">CALCULAR</button>
+        <div id="resultadoCierre" style="display:none;">
+            <p>Efectivo: <b id="resEfe"></b> | Tarjetas: <b id="resTar"></b></p>
+            <ul id="listaTransf" class="reporte-lista"></ul>
         </div>
     </div>
 
-    <div class="seccion" style="background: #fff8e1; border-color: #ffe082;">
-        <h4>🚛 Proveedores y Terceros</h4>
+    <div class="seccion" style="background: #fff8e1;">
+        <h4>🚛 Proveedores</h4>
         <div id="listaProveedores"></div>
-        <hr>
-        <label>Añadir/Ajustar Deuda:</label>
-        <input type="text" id="nomProv" placeholder="Nombre Proveedor">
-        <input type="number" id="montoProv" placeholder="Monto total a transferir">
-        <input type="text" id="motProv" placeholder="Motivo">
-        <button class="btn btn-azul" onclick="ajustarProveedor()">ACTUALIZAR PROVEEDOR</button>
-    </div>
-
-    <div id="modalHistorial" style="display:none; position:fixed; top:5%; left:5%; width:90%; max-height:90%; background:white; z-index:1001; border:2px solid #333; padding:15px; overflow-y:auto;">
-        <h3 id="titHist"></h3>
-        <table border="1" style="width:100%; border-collapse: collapse; font-size:12px;">
-            <thead><tr><th>Fecha</th><th>Detalle</th><th>Monto</th></tr></thead>
-            <tbody id="bodyHist"></tbody>
-        </table>
-        <button class="btn btn-rojo" onclick="document.getElementById('modalHistorial').style.display='none'">CERRAR</button>
+        <input type="text" id="nomProv" placeholder="Nombre">
+        <input type="number" id="montoProv" placeholder="Monto">
+        <button class="btn btn-azul" onclick="ajustarProveedor()">ACTUALIZAR</button>
     </div>
 </div>
 
@@ -115,7 +95,7 @@
             document.getElementById('bloqueo').style.display = 'none';
             document.getElementById('contenidoWeb').style.display = 'block';
             cargarProveedores();
-        } else { alert("Clave incorrecta"); }
+        } else { alert("Error"); }
     }
 
     window.onload = () => {
@@ -126,36 +106,22 @@
     async function cargarProveedores() {
         const res = await fetch(`${API}/proveedores`);
         listaProvsGlobal = await res.json();
-        let html = "", selectHtml = `<option value="GENERAL">-- ELEGIR PROVEEDOR --</option>`;
+        let html = "", selectHtml = `<option value="GENERAL">-- ELEGIR --</option>`;
         listaProvsGlobal.forEach(p => {
-            html += `<div style="padding:8px; border-bottom:1px solid #ccc; display:flex; justify-content:space-between;">
-                <span><b>${p.nombre}</b>: $${p.saldoDeuda}</span>
-                <button onclick="verDetalle('${p.nombre}')" style="font-size:10px;">HISTORIAL</button>
-            </div>`;
+            html += `<div>${p.nombre}: $${p.saldoDeuda}</div>`;
             selectHtml += `<option value="${p.nombre}">${p.nombre} ($${p.saldoDeuda})</option>`;
         });
         document.getElementById('listaProveedores').innerHTML = html;
         document.getElementById('destino').innerHTML = selectHtml;
     }
 
-    function mostrarSaldoDestino() {
-        const nombre = document.getElementById('destino').value;
-        const p = listaProvsGlobal.find(x => x.nombre === nombre);
-        document.getElementById('saldoDestinoInfo').innerText = p ? `Saldo pendiente: $${p.saldoDeuda}` : "";
-    }
-
-    function mostrarOpciones() {
-        document.getElementById('divDestino').style.display = (document.getElementById('metodo').value === 'TRANSFERENCIA') ? 'block' : 'none';
-    }
-
     async function autoCompletar() {
         const t = document.getElementById('inputNombre').value;
-        const div = document.getElementById('sugerencias');
-        if(t.length < 1) { div.style.display='none'; return; }
+        if(t.length < 1) return;
         const res = await fetch(`${API}/sugerencias/${t}`);
         const data = await res.json();
-        div.innerHTML = data.map(c => `<div class="sug-item" onclick="seleccionar('${c.nombre}')"><span>${c.nombre}</span> <small>${c.telefono || ''}</small></div>`).join('');
-        div.style.display = 'block';
+        document.getElementById('sugerencias').innerHTML = data.map(c => `<div class="sug-item" onclick="seleccionar('${c.nombre}')">${c.nombre}</div>`).join('');
+        document.getElementById('sugerencias').style.display = 'block';
     }
 
     function seleccionar(n) {
@@ -166,13 +132,10 @@
 
     async function buscarCliente() {
         const n = document.getElementById('inputNombre').value.toUpperCase();
-        if(!n) return;
         const res = await fetch(`${API}/clientes/${n}`);
         const d = await res.json();
         document.getElementById('nombreDisplay').innerText = d.nombre;
         document.getElementById('deudaDisplay').innerText = d.deuda;
-        document.getElementById('gasto').value = "0";
-        document.getElementById('pago').value = "0";
         document.getElementById('ficha').style.display = 'block';
     }
 
@@ -186,67 +149,26 @@
             fecha: document.getElementById('fechaOp').value
         };
         await fetch(`${API}/operaciones`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(op) });
-        alert("✅ Guardado correctamente");
-        // Limpiar sin recargar
-        document.getElementById('ficha').style.display = 'none';
-        document.getElementById('inputNombre').value = "";
-        cargarProveedores(); // Actualiza los saldos de proveedores
+        alert("Guardado");
+        location.reload();
+    }
+
+    function mostrarOpciones() {
+        document.getElementById('divDestino').style.display = (document.getElementById('metodo').value === 'TRANSFERENCIA') ? 'block' : 'none';
     }
 
     async function ajustarProveedor() {
-        const pass = prompt("Clave:");
-        if(pass !== CLAVE_MAESTRA) return alert("Clave incorrecta");
         await fetch(`${API}/proveedores/ajuste`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 nombre: document.getElementById('nomProv').value.toUpperCase(),
                 monto: document.getElementById('montoProv').value,
-                motivo: document.getElementById('motProv').value
+                motivo: "Ajuste manual"
             })
         });
-        document.getElementById('nomProv').value = "";
-        document.getElementById('montoProv').value = "";
-        cargarProveedores();
-    }
-
-    async function verDetalle(nombre) {
-        const p = listaProvsGlobal.find(x => x.nombre === nombre);
-        document.getElementById('titHist').innerText = "Historial: " + nombre;
-        document.getElementById('bodyHist').innerHTML = p.historial.slice().reverse().map(h => `<tr><td>${new Date(h.fecha).toLocaleDateString()}</td><td>${h.detalle}</td><td>$${h.movimiento}</td></tr>`).join('');
-        document.getElementById('modalHistorial').style.display = 'block';
-    }
-
-    async function generarCierre() {
-        const dia = document.getElementById('cierreDia').value;
-        const res = await fetch(`${API}/reporte?inicio=${dia}&fin=${dia}`);
-        const movs = await res.json();
-        let efe = 0, deb = 0, cre = 0;
-        let transfs = {};
-        movs.forEach(m => {
-            if(m.metodo === 'EFECTIVO') efe += m.pago;
-            else if(m.metodo === 'DEBITO') deb += m.pago;
-            else if(m.metodo === 'CREDITO') cre += m.pago;
-            else if(m.metodo === 'TRANSFERENCIA') {
-                transfs[m.destino] = (transfs[m.destino] || 0) + m.pago;
-            }
-        });
-        document.getElementById('resEfe').innerText = "$" + efe;
-        document.getElementById('resTar').innerText = `D: $${deb} | C: $${cre}`;
-        document.getElementById('listaTransf').innerHTML = Object.keys(transfs).map(k => `<li>${k}: $${transfs[k]}</li>`).join('');
-        document.getElementById('resultadoCierre').style.display = 'block';
-    }
-
-    async function eliminarCliente() {
-        const pass = prompt("Clave para ELIMINAR:");
-        if(pass === CLAVE_MAESTRA) {
-            const n = document.getElementById('nombreDisplay').innerText;
-            await fetch(`${API}/clientes/${n}`, { method: 'DELETE' });
-            alert("Eliminado");
-            location.reload();
-        }
+        location.reload();
     }
 </script>
 </body>
-
 </html>
