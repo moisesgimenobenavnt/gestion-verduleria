@@ -2,144 +2,114 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión Comercial</title>
+    <title>Gestión Comercial PRO</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .pantalla-inicio { min-height: 80vh; display: flex; flex-direction: column; justify-content: center; width: 100%; max-width: 600px; }
-        .contenedor { width: 100%; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); box-sizing: border-box; }
+        .contenedor { width: 100%; max-width: 650px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
         .seccion { border: 1px solid #e0e0e0; padding: 15px; border-radius: 10px; margin-bottom: 20px; background: #fff; }
-        h1, h2, h3 { text-align: center; color: #1a531b; margin-top: 0; }
-        label { display: block; margin-top: 12px; font-weight: bold; color: #555; }
-        input, select { width: 100%; padding: 14px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        .btn { padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 15px; width: 100%; margin-top: 12px; transition: 0.2s; }
+        .btn { padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
         .btn-verde { background: #28a745; color: white; }
         .btn-azul { background: #007bff; color: white; }
-        .btn-gris { background: #6c757d; color: white; }
         .btn-rojo { background: #dc3545; color: white; }
-        .deuda-box { font-size: 36px; color: #d32f2f; text-align: center; font-weight: bold; background: #ffebee; padding: 20px; border-radius: 10px; border: 2px solid #ffcdd2; margin: 15px 0; }
-        #sugerencias { position: absolute; background: white; border: 1px solid #ccc; width: 90%; z-index: 100; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .btn-gris { background: #6c757d; color: white; }
+        .deuda-box { font-size: 36px; color: #d32f2f; text-align: center; font-weight: bold; background: #ffebee; padding: 20px; border-radius: 10px; margin: 15px 0; }
+        .movimiento { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .compra-txt { color: #c53030; font-weight: bold; }
+        .pago-txt { color: #276749; font-weight: bold; }
+        #sugerencias { position: absolute; background: white; border: 1px solid #ccc; width: 90%; z-index: 100; border-radius: 8px; }
         .sug-item { padding: 14px; cursor: pointer; border-bottom: 1px solid #eee; }
-        .flex-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; align-items: center; }
-        .movimiento { display: flex; justify-content: space-between; padding: 8px; border-radius: 5px; margin-bottom: 5px; font-size: 13px; }
-        .compra-bg { background: #fff5f5; color: #c53030; border-left: 4px solid #f56565; }
-        .pago-bg { background: #f0fff4; color: #276749; border-left: 4px solid #48bb78; }
-        #bloqueo { position: fixed; top:0; left:0; width:100%; height:100%; background:#f0f2f5; z-index:999; display:flex; flex-direction:column; justify-content:center; align-items:center; }
-        .reportes-abajo { width: 100%; max-width: 600px; margin-top: 50px; opacity: 0.8; }
-        @media print { .no-print { display: none; } body { background: white; } .contenedor { box-shadow: none; border: 1px solid #000; } }
+        .receptor-link { color: blue; text-decoration: underline; cursor: pointer; }
+        @media print { .no-print { display: none; } }
     </style>
 </head>
 <body>
 
 <div id="bloqueo" class="no-print">
-    <h1>🥦 Sistema de Gestión</h1>
-    <input type="password" id="passAcceso" placeholder="Contraseña Maestra" style="width: 250px; text-align: center;">
+    <h1>🥦 Acceso Requerido</h1>
+    <input type="password" id="passAcceso" placeholder="Contraseña" style="width: 250px; text-align: center; padding: 10px;">
     <button class="btn btn-verde" style="width: 250px;" onclick="validarAcceso()">ENTRAR</button>
 </div>
 
-<div class="pantalla-inicio no-print" id="inicioBusqueda" style="display:none;">
-    <div class="contenedor">
-        <h2>🔍 Buscar Cliente</h2>
-        <input type="text" id="inputBusqueda" placeholder="Escribe Nombre o Teléfono..." oninput="autoCompletar()" autocomplete="off">
+<div class="contenedor" id="contenidoWeb" style="display:none;">
+    <div id="mainUI" class="no-print">
+        <h2>🔍 Buscador</h2>
+        <input type="text" id="inputBusqueda" placeholder="Nombre o Teléfono..." oninput="autoCompletar()" autocomplete="off" style="width:100%; padding:15px; font-size:18px;">
         <div id="sugerencias"></div>
-        <button class="btn btn-verde" onclick="buscarOCrear()">ABRIR FICHA / AÑADIR</button>
+        <button class="btn btn-verde" onclick="buscarOCrear()">ABRIR / AÑADIR CLIENTE</button>
     </div>
-    <p style="text-align:center; color:#999; margin-top:20px;">⬇️ Desliza hacia abajo para ver reportes y receptores</p>
-</div>
 
-<div id="ficha" style="display:none; margin-top:20px; width:100%; max-width:600px;">
-    <div class="contenedor">
-        <h3 id="nombreDisplay"></h3>
-        <div style="display:flex; gap:5px;">
-            <input type="text" id="telDisplay" placeholder="Añadir teléfono aquí...">
-            <button class="btn btn-azul" style="width:80px; margin:0;" onclick="actualizarTel()">💾</button>
-        </div>
-        <div class="deuda-box">$ <span id="deudaDisplay">0</span></div>
-        
-        <div class="no-print">
-            <label>🛒 Compra ($):</label><input type="number" id="gasto" value="0">
-            <label>💵 Pago hoy ($):</label><input type="number" id="pago" value="0">
-            <label>💳 Método:</label>
-            <select id="metodo" onchange="verificarMetodo()">
-                <option value="EFECTIVO">Efectivo</option>
-                <option value="TRANSFERENCIA">Transferencia</option>
-                <option value="TARJETA">Tarjeta</option>
-            </select>
-            <div id="divDestino" style="display:none;">
-                <label>🏦 Receptor de Transferencia:</label>
-                <select id="destinoProv"></select>
-            </div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+    <div id="ficha" style="display:none; margin-top:20px;">
+        <div class="seccion">
+            <h3 id="nombreDisplay"></h3>
+            <input type="text" id="telDisplay" placeholder="Teléfono..." style="width:100%; padding:8px; margin-bottom:10px;">
+            <div class="deuda-box">$ <span id="deudaDisplay">0</span></div>
+            
+            <div class="no-print">
+                <label>🛒 Compra ($):</label><input type="number" id="gasto" value="0" style="width:100%; padding:10px;">
+                <label>💵 Pago ($):</label><input type="number" id="pago" value="0" style="width:100%; padding:10px;">
+                <label>💳 Método:</label>
+                <select id="metodo" onchange="verificarMetodo()" style="width:100%; padding:10px;">
+                    <option value="EFECTIVO">Efectivo</option>
+                    <option value="TRANSFERENCIA">Transferencia</option>
+                    <option value="TARJETA">Tarjeta</option>
+                </select>
+                <div id="divDestino" style="display:none;">
+                    <label>🏦 Receptor:</label>
+                    <select id="destinoProv" style="width:100%; padding:10px;"></select>
+                </div>
                 <button class="btn btn-azul" onclick="guardarOperacion()">GUARDAR</button>
-                <button class="btn btn-gris" onclick="verHistorial()">HISTORIAL</button>
+                <button class="btn btn-gris" onclick="verHistorial()">VER HISTORIAL</button>
+                <button class="btn btn-rojo" onclick="cerrarFicha()">CERRAR</button>
             </div>
-            <button class="btn btn-rojo" onclick="cerrarFicha()">CERRAR SIN GUARDAR</button>
-        </div>
 
-        <div id="historialSeccion" style="display:none; margin-top:20px;">
+            <div id="historialSeccion" style="display:none; margin-top:20px;">
+                <h4>📋 Historial Detallado</h4>
+                <div id="listaHistorial"></div>
+                <button class="btn btn-gris no-print" onclick="window.print()">IMPRIMIR PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="seccion no-print" style="margin-top:40px;">
+        <h3>📊 Resumen de Hoy</h3>
+        <button class="btn btn-gris" onclick="toggleD('resumenDetalle')">Ver Caja y Deudores</button>
+        <div id="resumenDetalle" style="display:none;">
+            <p>Efectivo: <b id="cajaEfe">$0</b></p>
+            <p>Transferencia: <b id="cajaTra">$0</b></p>
+            <p>Tarjeta: <b id="cajaTar">$0</b></p>
             <hr>
-            <h4>📋 Detalle de Movimientos (Fecha y Hora)</h4>
-            <div id="listaHistorial"></div>
-            <button class="btn btn-gris no-print" onclick="window.print()">🖨️ DESCARGAR PDF</button>
+            <h4>Gente que debe hoy:</h4>
+            <div id="listaDeudoresHoy"></div>
         </div>
     </div>
-</div>
 
-<div class="reportes-abajo no-print" id="panelReportes" style="display:none;">
-    <div class="seccion">
-        <h3>📊 Resumen de Caja Hoy</h3>
-        <div class="flex-row"><span>Efectivo:</span> <b id="cajaEfe">$0</b></div>
-        <div class="flex-row"><span>Transferencia:</span> <b id="cajaTra">$0</b></div>
-        <div class="flex-row"><span>Tarjetas:</span> <b id="cajaTar">$0</b></div>
-        <button class="btn btn-gris" onclick="toggleD('deudoresHoy')">👥 Ver quién quedó debiendo hoy</button>
-        <div id="deudoresHoy" style="display:none; padding:10px; background:#fff5f5;" id="listaDeudoresHoy"></div>
-    </div>
-
-    <div class="seccion">
-        <h3>🏦 Receptores (Saldo Descendente)</h3>
+    <div class="seccion no-print">
+        <h3>🏦 Receptores</h3>
         <div id="listaReceptores"></div>
         <hr>
-        <label>Nuevo Receptor:</label>
-        <input type="text" id="nuevoR_nom" placeholder="Nombre">
-        <input type="number" id="nuevoR_mon" placeholder="Cupo Total">
-        <button class="btn btn-azul" onclick="crearReceptor()">AÑADIR RECEPTOR</button>
+        <input type="text" id="nuevoR_nom" placeholder="Nombre Receptor">
+        <input type="number" id="nuevoR_mon" placeholder="Cupo/Deuda Inicial">
+        <button class="btn btn-azul" onclick="crearReceptor()">AÑADIR O ACTUALIZAR</button>
     </div>
-
-    <button class="btn btn-gris" onclick="descargarBackup()">📥 DESCARGAR RESPALDO LOCAL</button>
-    <button class="btn btn-rojo" onclick="cerrarSesion()">🔓 SALIR DEL SISTEMA</button>
 </div>
 
 <script>
     const API = "/api";
     const CLAVE = "2026";
-    let clienteID_actual = "";
 
     window.onload = () => { if(localStorage.getItem('verduOK') === 'si') mostrar(); };
-
-    function validarAcceso() {
-        if(document.getElementById('passAcceso').value === CLAVE) {
-            localStorage.setItem('verduOK', 'si');
-            mostrar();
-        } else alert("Clave Incorrecta");
-    }
-
-    function mostrar() {
-        document.getElementById('bloqueo').style.display = 'none';
-        document.getElementById('inicioBusqueda').style.display = 'flex';
-        document.getElementById('panelReportes').style.display = 'block';
-        refrescarTodo();
-    }
-
-    function cerrarSesion() { localStorage.removeItem('verduOK'); location.reload(); }
+    function validarAcceso() { if(document.getElementById('passAcceso').value === CLAVE) { localStorage.setItem('verduOK', 'si'); mostrar(); } else alert("Clave Incorrecta"); }
+    function mostrar() { document.getElementById('bloqueo').style.display = 'none'; document.getElementById('contenidoWeb').style.display = 'block'; refrescarTodo(); }
+    function cerrarFicha() { document.getElementById('ficha').style.display = 'none'; document.getElementById('mainUI').style.display = 'block'; }
     function toggleD(id) { const e = document.getElementById(id); e.style.display = e.style.display === 'none' ? 'block' : 'none'; }
 
     async function refrescarTodo() {
         const r1 = await fetch(`${API}/receptores`);
         const recs = await r1.json();
         document.getElementById('listaReceptores').innerHTML = recs.map(r => `
-            <div class="flex-row">
-                <span style="cursor:pointer; color:blue;" onclick="verHistorialReceptor('${r.nombre}')"><b>${r.nombre}</b></span>
-                <span>Faltan: <b style="color:red;">$${r.saldoRestante}</b> / Total: $${r.montoObjetivo}</span>
-                <button onclick="borrarReceptor('${r._id}')" style="border:none; background:none;">❌</button>
+            <div style="padding:10px; border-bottom:1px solid #eee;">
+                <b class="receptor-link" onclick="verHistorialReceptor('${r.nombre}')">${r.nombre}</b>: 
+                <span style="color:red;">Faltan $${r.saldoRestante}</span> / Total $${r.montoObjetivo}
             </div>`).join('');
         document.getElementById('destinoProv').innerHTML = recs.map(r => `<option value="${r.nombre}">${r.nombre}</option>`).join('');
 
@@ -148,7 +118,7 @@
         document.getElementById('cajaEfe').innerText = `$${caja.totales.EFECTIVO}`;
         document.getElementById('cajaTra').innerText = `$${caja.totales.TRANSFERENCIA}`;
         document.getElementById('cajaTar').innerText = `$${caja.totales.TARJETA}`;
-        document.getElementById('deudoresHoy').innerHTML = caja.deudores.map(d => `<div class="flex-row"><span>${d.nombre}</span><b>+$${d.monto}</b></div>`).join('');
+        document.getElementById('listaDeudoresHoy').innerHTML = caja.deudores.map(d => `<p>${d.nombre}: <b>$${d.monto}</b></p>`).join('');
     }
 
     async function autoCompletar() {
@@ -156,41 +126,25 @@
         if(val.length < 2) return;
         const res = await fetch(`${API}/sugerencias/${val}`);
         const data = await res.json();
-        document.getElementById('sugerencias').innerHTML = data.map(c => `<div class="sug-item" onclick="cargarFicha('${c.nombre}','${c.telefono}','${c.deuda}','${c._id}')">${c.nombre} (${c.telefono})</div>`).join('');
+        document.getElementById('sugerencias').innerHTML = data.map(c => `<div class="sug-item" onclick="cargarFicha('${c.nombre}','${c.telefono}','${c.deuda}')">${c.nombre} (${c.telefono})</div>`).join('');
         document.getElementById('sugerencias').style.display = 'block';
     }
 
     async function buscarOCrear() {
         const val = document.getElementById('inputBusqueda').value.toUpperCase();
-        if(!val) return;
         const res = await fetch(`${API}/clientes/${val}`);
         const c = await res.json();
-        cargarFicha(c.nombre, c.telefono, c.deuda, c._id);
+        cargarFicha(c.nombre, c.telefono, c.deuda);
     }
 
-    function cargarFicha(nom, tel, deu, id) {
-        clienteID_actual = id;
+    function cargarFicha(nom, tel, deu) {
         document.getElementById('nombreDisplay').innerText = nom;
         document.getElementById('telDisplay').value = tel || "";
-        document.getElementById('deudaDisplay').innerText = deu || 0;
+        document.getElementById('deudaDisplay').innerText = deu;
         document.getElementById('ficha').style.display = 'block';
+        document.getElementById('mainUI').style.display = 'none';
         document.getElementById('sugerencias').style.display = 'none';
-        document.getElementById('inicioBusqueda').style.display = 'none';
     }
-
-    async function actualizarTel() {
-        const telefono = document.getElementById('telDisplay').value;
-        await fetch(`${API}/clientes/update-tel`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: clienteID_actual, telefono}) });
-        alert("Teléfono actualizado");
-    }
-
-    function cerrarFicha() {
-        document.getElementById('ficha').style.display = 'none';
-        document.getElementById('inicioBusqueda').style.display = 'flex';
-        document.getElementById('inputBusqueda').value = '';
-    }
-
-    function verificarMetodo() { document.getElementById('divDestino').style.display = document.getElementById('metodo').value === 'TRANSFERENCIA' ? 'block' : 'none'; }
 
     async function guardarOperacion() {
         const op = {
@@ -211,36 +165,27 @@
         const res = await fetch(`${API}/historial/${n}`);
         const data = await res.json();
         document.getElementById('listaHistorial').innerHTML = data.map(h => `
-            <div class="movimiento ${h.compra > 0 ? 'compra-bg' : 'pago-bg'}">
-                <span><b>${new Date(h.fecha).toLocaleString()}</b></span>
-                <span>${h.compra > 0 ? 'COMPRA: $'+h.compra : 'PAGO ('+h.metodo+'): $'+h.pago}</span>
+            <div class="movimiento">
+                <span>${new Date(h.fecha).toLocaleString()}</span>
+                <span class="${h.compra > 0 ? 'compra-txt' : ''}">${h.compra > 0 ? 'Compra: $'+h.compra : 'PAGO'}</span>
+                <span class="${h.pago > 0 ? 'pago-txt' : ''}">${h.pago > 0 ? 'Pago: $'+h.pago : '-'}</span>
             </div>`).join('');
         document.getElementById('historialSeccion').style.display = 'block';
     }
 
+    async function verHistorialReceptor(nom) {
+        const res = await fetch(`${API}/historial-receptor/${nom}`);
+        const data = await res.json();
+        alert("Historial de " + nom + ":\n" + data.map(h => `${new Date(h.fecha).toLocaleDateString()} - De ${h.cliente}: $${h.pago}`).join('\n'));
+    }
+
     async function crearReceptor() {
         const p = prompt("Clave:"); if(p!==CLAVE) return;
-        const nombre = document.getElementById('nuevoR_nom').value;
-        const monto = document.getElementById('nuevoR_mon').value;
-        await fetch(`${API}/receptores`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nombre, monto}) });
+        await fetch(`${API}/receptores`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nombre: document.getElementById('nuevoR_nom').value, monto: document.getElementById('nuevoR_mon').value}) });
         refrescarTodo();
     }
 
-    async function borrarReceptor(id) {
-        const p = prompt("Clave:"); if(p!==CLAVE) return;
-        await fetch(`${API}/receptores/${id}`, { method: 'DELETE' });
-        refrescarTodo();
-    }
-
-    async function descargarBackup() {
-        const res = await fetch(`${API}/exportar-backup`);
-        const data = await res.json();
-        const blob = new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `RESPALDO_LOCAL_${new Date().toLocaleDateString()}.json`;
-        a.click();
-    }
+    function verificarMetodo() { document.getElementById('divDestino').style.display = document.getElementById('metodo').value === 'TRANSFERENCIA' ? 'block' : 'none'; }
 </script>
 </body>
 </html>
