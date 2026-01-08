@@ -2,190 +2,206 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión Comercial PRO</title>
+    <title>Gestión Comercial Elite</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .contenedor { width: 100%; max-width: 650px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .pantalla-inicio { min-height: 90vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .contenedor { width: 100%; max-width: 600px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         .seccion { border: 1px solid #e0e0e0; padding: 15px; border-radius: 10px; margin-bottom: 20px; background: #fff; }
-        .btn { padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+        .deuda-box { font-size: 38px; color: #d32f2f; text-align: center; font-weight: bold; background: #ffebee; padding: 15px; border-radius: 10px; border: 2px solid #ffcdd2; margin: 10px 0; }
+        .btn { padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 15px; width: 100%; margin-top: 10px; }
         .btn-verde { background: #28a745; color: white; }
         .btn-azul { background: #007bff; color: white; }
         .btn-rojo { background: #dc3545; color: white; }
         .btn-gris { background: #6c757d; color: white; }
-        .deuda-box { font-size: 36px; color: #d32f2f; text-align: center; font-weight: bold; background: #ffebee; padding: 20px; border-radius: 10px; margin: 15px 0; }
-        .movimiento { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
-        .compra-txt { color: #c53030; font-weight: bold; }
-        .pago-txt { color: #276749; font-weight: bold; }
-        #sugerencias { position: absolute; background: white; border: 1px solid #ccc; width: 90%; z-index: 100; border-radius: 8px; }
+        .flex-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        #sugerencias { position: absolute; background: white; border: 1px solid #ccc; width: 100%; max-width: 550px; z-index: 100; border-radius: 8px; }
         .sug-item { padding: 14px; cursor: pointer; border-bottom: 1px solid #eee; }
-        .receptor-link { color: blue; text-decoration: underline; cursor: pointer; }
+        .reloje { text-align: center; font-size: 14px; color: #666; margin-bottom: 10px; font-weight: bold; }
+        .hist-item { font-size: 12px; padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        .negativo { color: #c53030; font-weight: bold; }
+        .positivo { color: #276749; font-weight: bold; }
+        #bloqueo { position: fixed; top:0; left:0; width:100%; height:100%; background:#f0f2f5; z-index:999; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+        .secretos { margin-top: 200px; opacity: 0.9; }
         @media print { .no-print { display: none; } }
     </style>
 </head>
 <body>
 
 <div id="bloqueo" class="no-print">
-    <h1>🥦 Acceso Requerido</h1>
-    <input type="password" id="passAcceso" placeholder="Contraseña" style="width: 250px; text-align: center; padding: 10px;">
+    <h1>🥦 Acceso Privado</h1>
+    <input type="password" id="passAcceso" placeholder="Contraseña" style="width: 250px; text-align: center; padding: 12px; border-radius: 8px; border: 1px solid #ccc;">
     <button class="btn btn-verde" style="width: 250px;" onclick="validarAcceso()">ENTRAR</button>
 </div>
 
-<div class="contenedor" id="contenidoWeb" style="display:none;">
-    <div id="mainUI" class="no-print">
-        <h2>🔍 Buscador</h2>
-        <input type="text" id="inputBusqueda" placeholder="Nombre o Teléfono..." oninput="autoCompletar()" autocomplete="off" style="width:100%; padding:15px; font-size:18px;">
+<div class="pantalla-inicio no-print" id="uiBusqueda" style="display:none;">
+    <div class="contenedor">
+        <h2>🔍 Buscar Cliente / Tel</h2>
+        <input type="text" id="inputBusqueda" placeholder="Ej: Ramon o 1123..." oninput="autoCompletar()" autocomplete="off" style="width:100%; padding:15px; font-size:18px; border-radius: 8px; border: 1px solid #ccc;">
         <div id="sugerencias"></div>
-        <button class="btn btn-verde" onclick="buscarOCrear()">ABRIR / AÑADIR CLIENTE</button>
+        <button class="btn btn-verde" onclick="buscarOCrear()">ABRIR FICHA</button>
     </div>
+    <p style="color:#999; margin-top:40px;">⬇️ Desliza para reportes ⬇️</p>
+</div>
 
-    <div id="ficha" style="display:none; margin-top:20px;">
-        <div class="seccion">
-            <h3 id="nombreDisplay"></h3>
-            <input type="text" id="telDisplay" placeholder="Teléfono..." style="width:100%; padding:8px; margin-bottom:10px;">
-            <div class="deuda-box">$ <span id="deudaDisplay">0</span></div>
-            
-            <div class="no-print">
-                <label>🛒 Compra ($):</label><input type="number" id="gasto" value="0" style="width:100%; padding:10px;">
-                <label>💵 Pago ($):</label><input type="number" id="pago" value="0" style="width:100%; padding:10px;">
-                <label>💳 Método:</label>
-                <select id="metodo" onchange="verificarMetodo()" style="width:100%; padding:10px;">
-                    <option value="EFECTIVO">Efectivo</option>
-                    <option value="TRANSFERENCIA">Transferencia</option>
-                    <option value="TARJETA">Tarjeta</option>
-                </select>
-                <div id="divDestino" style="display:none;">
-                    <label>🏦 Receptor:</label>
-                    <select id="destinoProv" style="width:100%; padding:10px;"></select>
-                </div>
-                <button class="btn btn-azul" onclick="guardarOperacion()">GUARDAR</button>
-                <button class="btn btn-gris" onclick="verHistorial()">VER HISTORIAL</button>
-                <button class="btn btn-rojo" onclick="cerrarFicha()">CERRAR</button>
-            </div>
-
-            <div id="historialSeccion" style="display:none; margin-top:20px;">
-                <h4>📋 Historial Detallado</h4>
-                <div id="listaHistorial"></div>
-                <button class="btn btn-gris no-print" onclick="window.print()">IMPRIMIR PDF</button>
-            </div>
+<div id="ficha" class="contenedor" style="display:none; margin: 20px auto;">
+    <div class="reloje" id="relojVivo"></div>
+    <h3 id="nombreDisplay" style="margin:0; text-align:center;"></h3>
+    <div class="deuda-box">$ <span id="deudaDisplay">0</span></div>
+    
+    <div class="no-print">
+        <label>🛒 Compra ($):</label><input type="number" id="gasto" value="0">
+        <label>💵 Pago hoy ($):</label><input type="number" id="pago" value="0">
+        <label>💳 Método:</label>
+        <select id="metodo" onchange="verMetodo()">
+            <option value="EFECTIVO">Efectivo</option>
+            <option value="TRANSFERENCIA">Transferencia</option>
+            <option value="TARJETA">Tarjeta</option>
+        </select>
+        <div id="divDestino" style="display:none;">
+            <label>🏦 Enviar a:</label>
+            <select id="destinoProv"></select>
         </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <button class="btn btn-azul" onclick="guardarOp()">GUARDAR</button>
+            <button class="btn btn-gris" onclick="verHistorial()">HISTORIAL</button>
+        </div>
+        <button class="btn btn-rojo" onclick="cerrarFicha()">CERRAR / NUEVO</button>
     </div>
 
-    <div class="seccion no-print" style="margin-top:40px;">
+    <div id="historialSeccion" style="display:none; margin-top:20px;">
+        <hr>
+        <div id="listaHistorial"></div>
+        <button class="btn btn-gris no-print" onclick="window.print()">IMPRIMIR PDF</button>
+    </div>
+</div>
+
+<div class="pantalla-inicio secretos no-print" id="uiReportes" style="display:none;">
+    <div class="contenedor seccion">
         <h3>📊 Resumen de Hoy</h3>
-        <button class="btn btn-gris" onclick="toggleD('resumenDetalle')">Ver Caja y Deudores</button>
-        <div id="resumenDetalle" style="display:none;">
-            <p>Efectivo: <b id="cajaEfe">$0</b></p>
-            <p>Transferencia: <b id="cajaTra">$0</b></p>
-            <p>Tarjeta: <b id="cajaTar">$0</b></p>
+        <button class="btn btn-gris" onclick="toggleD('detCaja')">Ver Caja y Deudores</button>
+        <div id="detCaja" style="display:none;">
+            <div class="flex-row"><span>Efectivo:</span> <b id="cajaEfe">$0</b></div>
+            <div class="flex-row"><span>Transferencia:</span> <b id="cajaTra">$0</b></div>
+            <div class="flex-row"><span>Tarjetas:</span> <b id="cajaTar">$0</b></div>
             <hr>
-            <h4>Gente que debe hoy:</h4>
-            <div id="listaDeudoresHoy"></div>
+            <h4>Gente con deuda acumulada:</h4>
+            <div id="listaDeudores"></div>
         </div>
     </div>
 
-    <div class="seccion no-print">
+    <div class="contenedor seccion">
         <h3>🏦 Receptores</h3>
         <div id="listaReceptores"></div>
         <hr>
-        <input type="text" id="nuevoR_nom" placeholder="Nombre Receptor">
-        <input type="number" id="nuevoR_mon" placeholder="Cupo/Deuda Inicial">
-        <button class="btn btn-azul" onclick="crearReceptor()">AÑADIR O ACTUALIZAR</button>
+        <input type="text" id="r_nom" placeholder="Nombre">
+        <input type="number" id="r_mon" placeholder="Monto Total">
+        <button class="btn btn-azul" onclick="addReceptor()">AÑADIR / ACTUALIZAR</button>
     </div>
+    <button class="btn btn-rojo" onclick="cerrarSesion()">CERRAR SESIÓN</button>
 </div>
 
 <script>
     const API = "/api";
     const CLAVE = "2026";
+    const fM = (n) => new Intl.NumberFormat('de-DE').format(n); // Función para puntos de mil
 
-    window.onload = () => { if(localStorage.getItem('verduOK') === 'si') mostrar(); };
-    function validarAcceso() { if(document.getElementById('passAcceso').value === CLAVE) { localStorage.setItem('verduOK', 'si'); mostrar(); } else alert("Clave Incorrecta"); }
-    function mostrar() { document.getElementById('bloqueo').style.display = 'none'; document.getElementById('contenidoWeb').style.display = 'block'; refrescarTodo(); }
-    function cerrarFicha() { document.getElementById('ficha').style.display = 'none'; document.getElementById('mainUI').style.display = 'block'; }
-    function toggleD(id) { const e = document.getElementById(id); e.style.display = e.style.display === 'none' ? 'block' : 'none'; }
+    setInterval(() => { document.getElementById('relojVivo').innerText = new Date().toLocaleString(); }, 1000);
 
-    async function refrescarTodo() {
+    window.onload = () => { if(localStorage.getItem('verduOK')==='si') mostrar(); };
+    function validarAcceso() { if(document.getElementById('passAcceso').value===CLAVE) { localStorage.setItem('verduOK','si'); mostrar(); } else alert("Error"); }
+    function mostrar() { document.getElementById('bloqueo').style.display='none'; document.getElementById('uiBusqueda').style.display='flex'; document.getElementById('uiReportes').style.display='flex'; refrescar(); }
+    function cerrarSesion() { localStorage.removeItem('verduOK'); location.reload(); }
+    function toggleD(id) { const e=document.getElementById(id); e.style.display=e.style.display==='none'?'block':'none'; }
+
+    async function refrescar() {
         const r1 = await fetch(`${API}/receptores`);
         const recs = await r1.json();
         document.getElementById('listaReceptores').innerHTML = recs.map(r => `
-            <div style="padding:10px; border-bottom:1px solid #eee;">
-                <b class="receptor-link" onclick="verHistorialReceptor('${r.nombre}')">${r.nombre}</b>: 
-                <span style="color:red;">Faltan $${r.saldoRestante}</span> / Total $${r.montoObjetivo}
+            <div class="flex-row">
+                <span style="color:blue; cursor:pointer;" onclick="histReceptor('${r.nombre}')"><b>${r.nombre}</b></span>
+                <span>Falta: <b class="negativo">$${fM(r.saldoRestante)}</b> / Total: $${fM(r.montoObjetivo)}</span>
+                <button onclick="borrarR('${r._id}')" style="background:none; border:none;">❌</button>
             </div>`).join('');
         document.getElementById('destinoProv').innerHTML = recs.map(r => `<option value="${r.nombre}">${r.nombre}</option>`).join('');
 
         const r2 = await fetch(`${API}/caja-hoy`);
         const caja = await r2.json();
-        document.getElementById('cajaEfe').innerText = `$${caja.totales.EFECTIVO}`;
-        document.getElementById('cajaTra').innerText = `$${caja.totales.TRANSFERENCIA}`;
-        document.getElementById('cajaTar').innerText = `$${caja.totales.TARJETA}`;
-        document.getElementById('listaDeudoresHoy').innerHTML = caja.deudores.map(d => `<p>${d.nombre}: <b>$${d.monto}</b></p>`).join('');
+        document.getElementById('cajaEfe').innerText = `$${fM(caja.totales.EFECTIVO)}`;
+        document.getElementById('cajaTra').innerText = `$${fM(caja.totales.TRANSFERENCIA)}`;
+        document.getElementById('cajaTar').innerText = `$${fM(caja.totales.TARJETA)}`;
+        document.getElementById('listaDeudores').innerHTML = caja.deudores.map(d => `<div class="flex-row"><span>${d.nombre}</span><b>$${fM(d.deuda)}</b></div>`).join('');
     }
 
     async function autoCompletar() {
-        const val = document.getElementById('inputBusqueda').value;
-        if(val.length < 2) return;
-        const res = await fetch(`${API}/sugerencias/${val}`);
+        const v = document.getElementById('inputBusqueda').value;
+        if(v.length < 2) return;
+        const res = await fetch(`${API}/sugerencias/${v}`);
         const data = await res.json();
-        document.getElementById('sugerencias').innerHTML = data.map(c => `<div class="sug-item" onclick="cargarFicha('${c.nombre}','${c.telefono}','${c.deuda}')">${c.nombre} (${c.telefono})</div>`).join('');
+        document.getElementById('sugerencias').innerHTML = data.map(c => `<div class="sug-item" onclick="cargar('${c.nombre}','${c.deuda}')">${c.nombre} ($${fM(c.deuda)})</div>`).join('');
         document.getElementById('sugerencias').style.display = 'block';
     }
 
     async function buscarOCrear() {
-        const val = document.getElementById('inputBusqueda').value.toUpperCase();
-        const res = await fetch(`${API}/clientes/${val}`);
+        const v = document.getElementById('inputBusqueda').value.toUpperCase();
+        if(!v) return;
+        const res = await fetch(`${API}/clientes/${v}`);
         const c = await res.json();
-        cargarFicha(c.nombre, c.telefono, c.deuda);
+        cargar(c.nombre, c.deuda);
     }
 
-    function cargarFicha(nom, tel, deu) {
+    function cargar(nom, deu) {
         document.getElementById('nombreDisplay').innerText = nom;
-        document.getElementById('telDisplay').value = tel || "";
-        document.getElementById('deudaDisplay').innerText = deu;
+        document.getElementById('deudaDisplay').innerText = fM(deu);
+        document.getElementById('gasto').value = 0;
+        document.getElementById('pago').value = 0;
         document.getElementById('ficha').style.display = 'block';
-        document.getElementById('mainUI').style.display = 'none';
+        document.getElementById('uiBusqueda').style.display = 'none';
         document.getElementById('sugerencias').style.display = 'none';
+        document.getElementById('historialSeccion').style.display = 'none';
     }
 
-    async function guardarOperacion() {
-        const op = {
-            cliente: document.getElementById('nombreDisplay').innerText,
-            compra: parseFloat(document.getElementById('gasto').value) || 0,
-            pago: parseFloat(document.getElementById('pago').value) || 0,
-            metodo: document.getElementById('metodo').value,
-            destino: document.getElementById('destinoProv').value
-        };
-        await fetch(`${API}/operaciones`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(op) });
-        alert("¡Guardado!");
+    function cerrarFicha() {
+        document.getElementById('ficha').style.display = 'none';
+        document.getElementById('uiBusqueda').style.display = 'flex';
+        document.getElementById('inputBusqueda').value = '';
+    }
+
+    async function guardarOp() {
+        const op = { cliente: document.getElementById('nombreDisplay').innerText, compra: parseFloat(document.getElementById('gasto').value), pago: parseFloat(document.getElementById('pago').value), metodo: document.getElementById('metodo').value, destino: document.getElementById('destinoProv').value };
+        await fetch(`${API}/operaciones`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(op) });
+        alert("Guardado");
         cerrarFicha();
-        refrescarTodo();
+        refrescar();
     }
 
     async function verHistorial() {
-        const n = document.getElementById('nombreDisplay').innerText;
-        const res = await fetch(`${API}/historial/${n}`);
+        const res = await fetch(`${API}/historial/${document.getElementById('nombreDisplay').innerText}`);
         const data = await res.json();
         document.getElementById('listaHistorial').innerHTML = data.map(h => `
-            <div class="movimiento">
-                <span>${new Date(h.fecha).toLocaleString()}</span>
-                <span class="${h.compra > 0 ? 'compra-txt' : ''}">${h.compra > 0 ? 'Compra: $'+h.compra : 'PAGO'}</span>
-                <span class="${h.pago > 0 ? 'pago-txt' : ''}">${h.pago > 0 ? 'Pago: $'+h.pago : '-'}</span>
+            <div class="hist-item">
+                <span><b>${new Date(h.fecha).toLocaleString()}</b></span>
+                <span class="negativo">C: $${fM(h.compra)}</span>
+                <span class="positivo">P: $${fM(h.pago)}</span>
             </div>`).join('');
         document.getElementById('historialSeccion').style.display = 'block';
     }
 
-    async function verHistorialReceptor(nom) {
+    async function histReceptor(nom) {
         const res = await fetch(`${API}/historial-receptor/${nom}`);
         const data = await res.json();
-        alert("Historial de " + nom + ":\n" + data.map(h => `${new Date(h.fecha).toLocaleDateString()} - De ${h.cliente}: $${h.pago}`).join('\n'));
+        alert("Envíos a " + nom + ":\n" + data.map(h => `${new Date(h.fecha).toLocaleDateString()} - $${fM(h.pago)} (de ${h.cliente})`).join('\n'));
     }
 
-    async function crearReceptor() {
+    async function addReceptor() {
         const p = prompt("Clave:"); if(p!==CLAVE) return;
-        await fetch(`${API}/receptores`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nombre: document.getElementById('nuevoR_nom').value, monto: document.getElementById('nuevoR_mon').value}) });
-        refrescarTodo();
+        await fetch(`${API}/receptores`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ nombre: document.getElementById('r_nom').value, monto: document.getElementById('r_mon').value }) });
+        document.getElementById('r_nom').value=''; document.getElementById('r_mon').value='';
+        refrescar();
     }
 
-    function verificarMetodo() { document.getElementById('divDestino').style.display = document.getElementById('metodo').value === 'TRANSFERENCIA' ? 'block' : 'none'; }
+    async function borrarR(id) { const p = prompt("Clave:"); if(p!==CLAVE) return; await fetch(`${API}/receptores/${id}`, { method: 'DELETE' }); refrescar(); }
+    function verMetodo() { document.getElementById('divDestino').style.display = document.getElementById('metodo').value === 'TRANSFERENCIA' ? 'block' : 'none'; }
 </script>
 </body>
 </html>
