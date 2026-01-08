@@ -10,29 +10,19 @@ app.use(cors());
 
 mongoose.connect(process.env.MONGO_URI);
 
-// MODELOS CON HORA EXACTA
 const Cliente = mongoose.model('Cliente', new mongoose.Schema({ 
-    nombre: String, 
-    telefono: String, 
-    deuda: { type: Number, default: 0 } 
+    nombre: String, telefono: String, deuda: { type: Number, default: 0 } 
 }));
 
 const Receptor = mongoose.model('Receptor', new mongoose.Schema({ 
-    nombre: String, 
-    montoObjetivo: Number, 
-    saldoRestante: Number 
+    nombre: { type: String, uppercase: true }, montoObjetivo: Number, saldoRestante: Number 
 }));
 
 const Operacion = mongoose.model('Operacion', new mongoose.Schema({ 
-    cliente: String, 
-    compra: Number, 
-    pago: Number, 
-    metodo: String, 
-    destino: String, 
-    fecha: { type: Date, default: Date.now } 
+    cliente: String, compra: Number, pago: Number, metodo: String, destino: String, fecha: { type: Date, default: Date.now }, deudaMomento: Number
 }));
 
-// API
+// API CLIENTES
 app.get('/api/sugerencias/:query', async (req, res) => {
     const q = req.params.query;
     res.json(await Cliente.find({ $or: [{nombre: new RegExp(q,'i')}, {telefono: new RegExp(q,'i')}] }).limit(5).sort({nombre:1}));
@@ -45,25 +35,34 @@ app.get('/api/clientes/:val', async (req, res) => {
     res.json(c);
 });
 
-app.post('/api/clientes/update-tel', async (req, res) => {
-    const { id, telefono } = req.body;
-    await Cliente.findByIdAndUpdate(id, { telefono });
+app.post('/api/operaciones', async (req, res) => {
+    const { cliente, compra, pago, metodo, destino } = req.body;
+    const c = await Cliente.findOneAndUpdate({ nombre: cliente }, { $inc: { deuda: (compra - pago) } }, { new: true });
+    if (metodo === 'TRANSFERENCIA' && pago > 0) {
+        await Receptor.findOneAndUpdate({ nombre: destino }, { $inc: { saldoRestante: -pago } });
+    }
+    const op = new Operacion({ ...req.body, deudaMomento: c.deuda });
+    await op.save();
     res.json({ ok: true });
 });
 
+// API RECEPTORES (PROVEEDORES)
 app.get('/api/receptores', async (req, res) => res.json(await Receptor.find().sort({nombre:1})));
 
 app.post('/api/receptores', async (req, res) => {
     const { nombre, monto } = req.body;
-    const nuevo = new Receptor({ nombre: nombre.toUpperCase(), montoObjetivo: monto, saldoRestante: monto });
-    await nuevo.save();
+    const exist = await Receptor.findOne({ nombre: nombre.toUpperCase() });
+    if (exist) {
+        exist.montoObjetivo += parseFloat(monto);
+        exist.saldoRestante += parseFloat(monto);
+        await exist.save();
+    } else {
+        await new Receptor({ nombre: nombre.toUpperCase(), montoObjetivo: monto, saldoRestante: monto }).save();
+    }
     res.json({ ok: true });
 });
 
-app.delete('/api/receptores/:id', async (req, res) => {
-    await Receptor.findByIdAndDelete(req.params.id);
-    res.json({ ok: true });
-});
+app.delete('/api/receptores/:id', async (req, res) => { res.json(await Receptor.findByIdAndDelete(req.params.id)); });
 
 app.get('/api/caja-hoy', async (req, res) => {
     const inicio = new Date(); inicio.setHours(0,0,0,0);
@@ -72,18 +71,15 @@ app.get('/api/caja-hoy', async (req, res) => {
         acc[o.metodo] = (acc[o.metodo] || 0) + o.pago;
         return acc;
     }, {EFECTIVO:0, TRANSFERENCIA:0, TARJETA:0});
-    const deudores = ops.filter(o => o.compra > o.pago).map(o => ({ nombre: o.cliente, monto: o.compra - o.pago }));
-    res.json({ totales, deudores });
-});
-
-app.post('/api/operaciones', async (req, res) => {
-    const { cliente, compra, pago, metodo, destino } = req.body;
-    await Cliente.findOneAndUpdate({ nombre: cliente }, { $inc: { deuda: (compra - pago) } });
-    if (metodo === 'TRANSFERENCIA' && pago > 0) {
-        await Receptor.findOneAndUpdate({ nombre: destino }, { $inc: { saldoRestante: -pago } });
+    
+    // Solo deudores activos (deuda > 0)
+    const clientesHoy = [...new Set(ops.map(o => o.cliente))];
+    const deudores = [];
+    for(let nom of clientesHoy) {
+        const c = await Cliente.findOne({ nombre: nom });
+        if(c && c.deuda > 0) deudores.push({ nombre: c.nombre, monto: c.deuda });
     }
-    await new Operacion(req.body).save();
-    res.json({ ok: true });
+    res.json({ totales, deudores });
 });
 
 app.get('/api/historial/:nombre', async (req, res) => {
@@ -94,13 +90,6 @@ app.get('/api/historial-receptor/:nombre', async (req, res) => {
     res.json(await Operacion.find({ destino: req.params.nombre }).sort({ fecha: -1 }));
 });
 
-app.get('/api/exportar-backup', async (req, res) => {
-    const c = await Cliente.find().sort({nombre:1});
-    const r = await Receptor.find().sort({nombre:1});
-    res.json({ clientes: c, receptores: r, backup_fecha: new Date() });
-});
-
 app.use(express.static(__dirname));
 app.get('*', (req, res) => res.sendFile(path.resolve(__dirname, 'index.html')));
-
 app.listen(process.env.PORT || 10000);
