@@ -2,70 +2,66 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión Comercial Oriental</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Oriental Gestión Pro</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f3; margin: 0; padding: 10px; color: #333; }
-        .contenedor { width: 100%; max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); box-sizing: border-box; }
-        .reloje { text-align: center; font-size: 20px; font-weight: 900; color: #004d40; background: #e0f2f1; padding: 12px; border-radius: 12px; margin-bottom: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 10px; }
+        .contenedor { width: 100%; max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        .reloje { text-align: center; font-size: 20px; font-weight: 900; color: #004d40; background: #e0f2f1; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
         .deuda-box { font-size: 45px; color: #b71c1c; text-align: center; font-weight: bold; background: #ffebee; padding: 20px; border-radius: 15px; border: 3px solid #ffcdd2; margin: 15px 0; }
-        input, select { width: 100%; padding: 18px; margin-top: 10px; border: 2px solid #ccc; border-radius: 12px; box-sizing: border-box; font-size: 18px; outline: none; transition: 0.3s; }
-        input:focus { border-color: #2e7d32; }
-        .btn { padding: 18px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 18px; width: 100%; margin-top: 15px; }
+        input, select { width: 100%; padding: 18px; margin-top: 10px; border: 2px solid #ddd; border-radius: 12px; font-size: 18px; text-transform: uppercase; }
+        .btn { padding: 18px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 15px; }
         .btn-verde { background: #2e7d32; color: white; }
         .btn-azul { background: #1565c0; color: white; }
         .btn-rojo { background: #c62828; color: white; }
         .btn-gris { background: #455a64; color: white; }
-        .flex-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; font-size: 16px; align-items: center; }
-        .flash { animation: parpadeo 0.5s 3; }
+        .flex-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .anulado { background: #000 !important; color: #fff !important; }
+        .anulado b, .anulado span { color: #fff !important; }
+        .flash-verde { animation: parpadeo 0.4s 3; }
         @keyframes parpadeo { 0% { background: white; } 50% { background: #ccff00; } 100% { background: white; } }
         .oculto { display: none; }
-        .item-hist { border-bottom: 1px solid #ddd; padding: 15px 0; position: relative; }
-        @media print { .no-print { display: none; } .contenedor { box-shadow: none; border: none; } }
+        #sugerencias { position: absolute; background: white; border: 1px solid #ccc; width: 90%; z-index: 100; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .sug-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
+        @media print { .no-print { display: none !important; } .anulado { background: #000 !important; -webkit-print-color-adjust: exact; } }
     </style>
 </head>
 <body>
 
-<div id="bloqueo" class="contenedor" style="margin-top: 15vh; text-align: center;">
-    <h2>🔑 Acceso Privado</h2>
-    <input type="password" id="passAcceso" placeholder="Contraseña..." onkeydown="if(event.key==='Enter') validarAcceso()">
-    <button class="btn btn-verde" onclick="validarAcceso()">ENTRAR AL SISTEMA</button>
+<div id="bloqueo" class="contenedor" style="margin-top: 20vh; text-align: center;">
+    <h2>🔑 Acceso Maestro</h2>
+    <input type="password" id="passAcceso" placeholder="PIN 2026" onkeydown="if(event.key==='Enter') validarAcceso()">
+    <button class="btn btn-verde" onclick="validarAcceso()">ENTRAR</button>
 </div>
 
 <div id="contenidoWeb" class="oculto">
-    <div class="contenedor no-print" id="uiBusqueda">
+    <div class="contenedor no-print" id="uiBusqueda" style="min-height: 70vh; display: flex; flex-direction: column; justify-content: center;">
         <h1 style="text-align: center; color: #2e7d32;">Oriental Gestión</h1>
-        <label>Buscar Cliente:</label>
-        <input type="text" id="inputBusqueda" placeholder="Nombre o Teléfono..." onkeydown="if(event.key==='Enter') buscarOCrear()">
+        <input type="text" id="inputBusqueda" placeholder="Buscar Cliente..." oninput="autoCompletar()" autocomplete="off" onkeydown="if(event.key==='Enter') buscarOCrear()">
+        <div id="sugerencias"></div>
         <button class="btn btn-verde" onclick="buscarOCrear()">ABRIR FICHA</button>
     </div>
 
-    <div id="ficha" class="contenedor oculto" style="margin-top:10px;">
+    <div id="ficha" class="contenedor oculto">
         <div class="reloje" id="reloj"></div>
-        <h2 id="nomDisp" style="text-align:center; margin:0; color:#1565c0; text-transform: uppercase;"></h2>
-        <div class="deuda-box">$ <span id="montoDisp">0</span></div>
+        <h2 id="nomDisp" style="text-align:center; color:#1565c0;"></h2>
+        <div class="deuda-box" id="cajaMonto">$ <span id="montoDisp">0</span></div>
 
         <div id="formMover" class="no-print">
             <label>🛒 Compra ($):</label>
-            <input type="text" id="compra" placeholder="0" oninput="formatI(this)" onkeydown="if(event.key==='Enter') document.getElementById('pago').focus()">
+            <input type="text" id="gasto" placeholder="0" oninput="formatI(this)" onkeydown="if(event.key==='Enter') document.getElementById('pago').focus()">
             <label>💵 Pago ($):</label>
             <input type="text" id="pago" placeholder="0" oninput="formatI(this)" onkeydown="if(event.key==='Enter') document.getElementById('metodo').focus()">
-            
-            <label>Forma de Pago:</label>
-            <select id="metodo" onchange="seleccionarMetodo()">
-                <option value="">-- ELIJA MÉTODO --</option>
+            <label>💳 Método:</label>
+            <select id="metodo" onchange="alertaTransf()">
+                <option value="">-- SELECCIONE --</option>
                 <option value="EFECTIVO">EFECTIVO</option>
                 <option value="TRANSFERENCIA">TRANSFERENCIA</option>
                 <option value="TARJETA">TARJETA</option>
             </select>
-
-            <div id="divDestino" class="oculto">
-                <label>🏦 Enviar a:</label>
-                <select id="selDestino"></select>
-            </div>
-
-            <button class="btn btn-verde" onclick="guardarOp()">💾 GUARDAR OPERACIÓN</button>
-            <button class="btn btn-gris" onclick="verHistorial()">📋 HISTORIAL COMPLETO</button>
+            <div id="divDestino" class="oculto"><label>🏦 Receptor:</label><select id="selDestino"></select></div>
+            <button class="btn btn-verde" onclick="guardarOp()">💾 GUARDAR</button>
+            <button class="btn btn-gris" onclick="verHistorial()">📋 HISTORIAL / ANULACIONES</button>
             <button class="btn btn-rojo" onclick="cerrarFicha()">❌ VOLVER</button>
         </div>
 
@@ -77,159 +73,123 @@
         </div>
     </div>
 
-    <div class="contenedor no-print" style="margin-top: 30px;">
-        <button class="btn btn-gris" onclick="toggle('rep')">📊 REPORTES Y CAJA</button>
-        <div id="rep" class="oculto" style="padding:15px; border:1px solid #ddd; border-radius:15px; margin-top:10px;">
-            <label>Desde:</label> <input type="date" id="fD">
-            <label>Hasta:</label> <input type="date" id="fH">
-            <button class="btn btn-azul" onclick="cargarCaja()">MOSTRAR DATOS</button>
+    <div class="contenedor no-print" style="margin-top: 50px;">
+        <button class="btn btn-gris" onclick="toggle('rep')">📊 REPORTES DE CAJA Y VENTA</button>
+        <div id="rep" class="oculto">
+            <input type="date" id="fD"> <input type="date" id="fH">
+            <button class="btn btn-azul" onclick="cargarCaja()">VER RANGO</button>
             <div id="cajaInfo"></div>
-            <h4>👥 Deudores:</h4>
-            <div id="listaD"></div>
-            <h4>🏦 Receptores:</h4>
-            <div id="listaR"></div>
-            <hr>
-            <input type="text" id="rn" placeholder="Nombre Receptor">
-            <input type="text" id="rm" placeholder="Monto" oninput="formatI(this)">
-            <button class="btn btn-verde" onclick="addRec()">+ AÑADIR MONTO</button>
+            <h4>👥 Deudores y 🏦 Receptores:</h4>
+            <div id="listaD"></div><hr><div id="listaR"></div>
+            <div style="background:#eee; padding:10px; border-radius:10px; margin-top:10px;">
+                <input type="text" id="rn" placeholder="Nombre Receptor">
+                <input type="text" id="rm" placeholder="Monto Fijo" oninput="formatI(this)">
+                <button class="btn btn-verde" onclick="addRec()">AÑADIR</button>
+            </div>
         </div>
+        <button class="btn btn-rojo" style="margin-top:100px;" onclick="location.reload()">SALIR</button>
     </div>
 </div>
 
 <script>
-    const CLAVE_M = "moises1";
+    const MAESTRA = "moises1";
     setInterval(() => { document.getElementById('reloj').innerText = new Date().toLocaleString(); }, 1000);
-
     function formatI(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? new Intl.NumberFormat('de-DE').format(v) : ""; }
     function fM(v) { return new Intl.NumberFormat('de-DE').format(v); }
     function limpio(v) { return parseFloat(v.replace(/\./g, "")) || 0; }
+    function toggle(id) { document.getElementById(id).classList.toggle('oculto'); }
 
     function validarAcceso() {
-        if(document.getElementById('passAcceso').value === "2026") {
+        if(document.getElementById('passAcceso').value==="2026") {
             document.getElementById('bloqueo').classList.add('oculto');
             document.getElementById('contenidoWeb').classList.remove('oculto');
-            const hoy = new Date().toISOString().split('T')[0];
-            document.getElementById('fD').value = hoy; document.getElementById('fH').value = hoy;
-            cargarCaja();
-        } else alert("Clave Incorrecta");
+            initCaja();
+        } else alert("PIN Incorrecto");
+    }
+
+    async function autoCompletar() {
+        const v = document.getElementById('inputBusqueda').value; if(v.length<2) return;
+        const res = await fetch(`/api/sugerencias/${v}`); const data = await res.json();
+        document.getElementById('sugerencias').innerHTML = data.sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(c => `<div class="sug-item" onclick="abrirC('${c.nombre}')">${c.nombre}</div>`).join('');
+        document.getElementById('sugerencias').style.display = 'block';
     }
 
     async function buscarOCrear() {
-        const v = document.getElementById('inputBusqueda').value; if(!v) return;
+        const v = document.getElementById('inputBusqueda').value.toUpperCase(); if(!v) return;
         const res = await fetch(`/api/clientes/${v}`); const c = await res.json();
-        abrirFicha(c);
+        abrirC(c.nombre);
     }
 
-    function abrirFicha(c) {
+    async function abrirC(n) {
+        const res = await fetch(`/api/clientes/${n}`); const c = await res.json();
         document.getElementById('nomDisp').innerText = c.nombre;
         document.getElementById('montoDisp').innerText = fM(c.deuda);
         document.getElementById('ficha').classList.remove('oculto');
         document.getElementById('uiBusqueda').classList.add('oculto');
+        document.getElementById('sugerencias').style.display='none';
         window.scrollTo(0,0);
     }
 
-    function seleccionarMetodo() {
+    function alertaTransf() {
         const m = document.getElementById('metodo').value;
         const d = document.getElementById('divDestino');
-        if(m === 'TRANSFERENCIA') {
-            d.classList.remove('oculto');
-            d.classList.add('flash'); setTimeout(() => d.classList.remove('flash'), 2000);
-        } else d.classList.add('oculto');
+        if(m==='TRANSFERENCIA') { d.classList.remove('oculto'); d.classList.add('flash-verde'); setTimeout(()=>d.classList.remove('flash-verde'), 1500); }
+        else d.classList.add('oculto');
     }
-
-    async function cargarCaja() {
-        const d = document.getElementById('fD').value;
-        const h = document.getElementById('fH').value;
-        const res = await fetch(`/api/reporte-caja?desde=${d}&hasta=${h}`);
-        const data = await res.json();
-        
-        document.getElementById('cajaInfo').innerHTML = `
-            <div class="flex-row"><span>Efectivo:</span> <b>$${fM(data.totales.EFECTIVO)}</b></div>
-            <div class="flex-row"><span>Tarjeta:</span> <b>$${fM(data.totales.TARJETA)}</b></div>
-            <div class="flex-row"><span>Transferencia:</span> <b>$${fM(data.totales.TRANSFERENCIA)}</b></div>
-            <div class="flex-row" style="border-top:2px solid #000"><span>TOTAL DEUDAS:</span> <b style="color:red">$${fM(data.totalDeudaGeneral)}</b></div>
-        `;
-
-        document.getElementById('listaD').innerHTML = data.deudores.map(o => `
-            <div class="flex-row" onclick="irACliente('${o.nombre}')"><span>${o.nombre}</span> <b style="color:red">$${fM(o.deuda)}</b></div>
-        `).join('');
-
-        document.getElementById('listaR').innerHTML = data.receptores.map(r => {
-            let color = r.saldoRestante > 50000 ? "green" : (r.saldoRestante > 0 ? "orange" : "#00ff00");
-            let texto = r.saldoRestante <= 0 ? "SUPERÁVIT" : "FALTA";
-            return `<div class="flex-row">
-                <span style="color:blue; cursor:pointer;" onclick="histRec('${r.nombre}')">${r.nombre} (FIJO: $${fM(r.montoObjetivo)})</span>
-                <b style="color:${color}">${texto}: $${fM(Math.abs(r.saldoRestante))}</b>
-            </div>`;
-        }).join('');
-
-        document.getElementById('selDestino').innerHTML = data.receptores.map(r => `<option value="${r.nombre}">${r.nombre}</option>`).join('');
-    }
-
-    async function irACliente(n) { const res = await fetch(`/api/clientes/${n}`); const c = await res.json(); abrirFicha(c); }
 
     async function guardarOp() {
-        if(!document.getElementById('metodo').value) { alert("¡Debe elegir la Forma de Pago!"); return; }
-        const body = {
-            cliente: document.getElementById('nomDisp').innerText,
-            compra: limpio(document.getElementById('compra').value),
-            pago: limpio(document.getElementById('pago').value),
-            metodo: document.getElementById('metodo').value,
-            destino: document.getElementById('selDestino').value
-        };
+        if(!document.getElementById('metodo').value) return alert("Elija Método");
+        const body = { cliente: document.getElementById('nomDisp').innerText, compra: limpio(document.getElementById('gasto').value), pago: limpio(document.getElementById('pago').value), metodo: document.getElementById('metodo').value, destino: document.getElementById('selDestino').value };
         await fetch('/api/operaciones', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-        alert("Guardado"); cerrarFicha(); cargarCaja();
+        cerrarFicha(); cargarCaja();
     }
 
     async function verHistorial() {
         const res = await fetch(`/api/historial/${document.getElementById('nomDisp').innerText}`);
         const data = await res.json();
         document.getElementById('listaHist').innerHTML = data.map(h => `
-            <div class="item-hist">
-                <b>${new Date(h.fecha).toLocaleString()}</b><br>
-                Compra: $${fM(h.compra)} | Pago: $${fM(h.pago)} (${h.metodo} ${h.destino||''})<br>
-                Saldo: <b style="color:red">$${fM(h.deudaCorte)}</b>
-                <button onclick="borrarOp('${h._id}')" style="position:absolute; right:0; top:15px; background:none; border:none; cursor:pointer;">🗑️</button>
-            </div>
-        `).join('');
-        document.getElementById('formMover').classList.add('oculto');
-        document.getElementById('seccionHist').classList.remove('oculto');
+            <div class="flex-row ${h.anulado?'anulado':''}" style="padding:10px; border-radius:8px; margin-bottom:5px;">
+                <span>${new Date(h.fecha).toLocaleString()}<br>${h.anulado?'[ANULADO]':''} $${fM(h.compra)} | $${fM(h.pago)} (${h.metodo})</span>
+                <button onclick="anularOp('${h._id}')" style="background:none; border:none; cursor:pointer;">🗑️</button>
+            </div>`).join('');
+        toggle('seccionHist'); document.getElementById('formMover').classList.add('oculto');
     }
 
-    async function histRec(nom) {
-        const res = await fetch(`/api/historial-receptor/${nom}`);
+    async function anularOp(id) {
+        if(prompt("Contraseña Maestra:")===MAESTRA) {
+            await fetch('/api/operaciones/anular', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id}) });
+            alert("Operación Anulada"); verHistorial(); cargarCaja();
+        }
+    }
+
+    async function cargarCaja() {
+        const d = document.getElementById('fD').value; const h = document.getElementById('fH').value;
+        const res = await fetch(`/api/reporte-completo?desde=${d}&hasta=${h}`);
         const data = await res.json();
-        document.getElementById('nomDisp').innerText = "REC: " + nom;
-        document.getElementById('listaHist').innerHTML = data.map(h => `
-            <div class="item-hist">
-                <b>${new Date(h.fecha).toLocaleString()}</b><br>
-                Cliente: ${h.cliente} | Pago: $${fM(h.pago)}
-            </div>
-        `).join('');
-        document.getElementById('ficha').classList.remove('oculto');
-        document.getElementById('uiBusqueda').classList.add('oculto');
-        document.getElementById('formMover').classList.add('oculto');
-        document.getElementById('seccionHist').classList.remove('oculto');
+        document.getElementById('cajaInfo').innerHTML = `
+            <div class="flex-row"><span>Efe: $${fM(data.totales.EFECTIVO)}</span> <span>Tra: $${fM(data.totales.TRANSFERENCIA)}</span></div>
+            <div class="flex-row"><span>Tar: $${fM(data.totales.TARJETA)}</span> <span style="color:blue">VENTA TOTAL: $${fM(data.totales.ventaTotal)}</span></div>
+        `;
+        document.getElementById('listaD').innerHTML = data.deudores.map(o => `<div class="flex-row" onclick="abrirC('${o.nombre}')"><span>${o.nombre}</span> <b style="color:red">$${fM(o.deuda)}</b></div>`).join('');
+        document.getElementById('listaR').innerHTML = data.receptores.map(r => {
+            let col = r.saldoRestante > 50000 ? "green" : (r.saldoRestante > 0 ? "orange" : "red");
+            return `<div class="flex-row"><span onclick="histR('${r.nombre}')" style="color:blue; cursor:pointer;">${r.nombre} (FIJO: $${fM(r.montoObjetivo)})</span> <b style="color:${col}">${r.saldoRestante<=0?'SUPERÁVIT':'FALTA'}: $${fM(Math.abs(r.saldoRestante))}</b><button onclick="borrarR('${r._id}')" style="border:none; background:none;">❌</button></div>`;
+        }).join('');
+        document.getElementById('selDestino').innerHTML = data.receptores.map(r => `<option value="${r.nombre}">${r.nombre}</option>`).join('');
     }
 
-    async function borrarOp(id) {
-        if(prompt("Introduzca Contraseña Maestra:") === CLAVE_M) {
-            await fetch(`/api/operaciones/${id}`, { method: 'DELETE' });
-            alert("Eliminado"); verHistorial(); cargarCaja();
-        } else alert("Contraseña incorrecta");
+    async function histR(n) {
+        const res = await fetch(`/api/historial-receptor/${n}`); const data = await res.json();
+        document.getElementById('nomDisp').innerText = "REC: " + n;
+        document.getElementById('listaHist').innerHTML = data.map(h => `<div class="flex-row ${h.anulado?'anulado':''}"><span>${new Date(h.fecha).toLocaleString()} | De: ${h.cliente} | $${fM(h.pago)}</span></div>`).join('');
+        document.getElementById('seccionHist').classList.remove('oculto'); document.getElementById('ficha').classList.remove('oculto'); document.getElementById('uiBusqueda').classList.add('oculto');
     }
 
-    function cerrarFicha() {
-        document.getElementById('ficha').classList.add('oculto');
-        document.getElementById('uiBusqueda').classList.remove('oculto');
-        document.getElementById('compra').value = ""; document.getElementById('pago').value = "";
-    }
+    function cerrarFicha() { document.getElementById('ficha').classList.add('oculto'); document.getElementById('uiBusqueda').classList.remove('oculto'); document.getElementById('inputBusqueda').value=""; }
     function cerrarHist() { document.getElementById('seccionHist').classList.add('oculto'); document.getElementById('formMover').classList.remove('oculto'); }
-    function toggle(id) { document.getElementById(id).classList.toggle('oculto'); }
-    async function addRec() {
-        await fetch('/api/receptores', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ nombre: document.getElementById('rn').value, monto: limpio(document.getElementById('rm').value) }) });
-        cargarCaja();
-    }
+    async function addRec() { await fetch('/api/receptores', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ nombre: document.getElementById('rn').value, monto: limpio(document.getElementById('rm').value) }) }); cargarCaja(); }
+    async function borrarR(id) { if(prompt("Contraseña Maestra:")===MAESTRA) { await fetch(`/api/receptores/${id}`, { method:'DELETE' }); cargarCaja(); } }
+    function initCaja() { const h = new Date().toISOString().split('T')[0]; document.getElementById('fD').value=h; document.getElementById('fH').value=h; cargarCaja(); }
 </script>
 </body>
 </html>
