@@ -32,6 +32,10 @@ const Operacion = mongoose.model('Operacion', new mongoose.Schema({
     deudaCorte: Number
 }));
 
+app.get('/api/sugerencias/:query', async (req, res) => {
+    res.json(await Cliente.find({ $or: [{nombre: new RegExp(req.params.query,'i')}, {telefono: new RegExp(req.params.query,'i')}] }).limit(5).sort({nombre:1}));
+});
+
 app.get('/api/clientes/:val', async (req, res) => {
     const v = req.params.val.toUpperCase();
     let c = await Cliente.findOne({ $or: [{nombre: v}, {telefono: v}] });
@@ -39,49 +43,52 @@ app.get('/api/clientes/:val', async (req, res) => {
     res.json(c);
 });
 
+app.post('/api/clientes/update-tel', async (req, res) => {
+    const { id, telefono } = req.body;
+    await Cliente.findByIdAndUpdate(id, { telefono });
+    res.json({ ok: true });
+});
+
 app.post('/api/operaciones', async (req, res) => {
     const { cliente, compra, pago, metodo, destino } = req.body;
-    const c = await Cliente.findOneAndUpdate({ nombre: cliente.toUpperCase() }, { $inc: { deuda: (compra - pago) } }, { new: true });
+    const cliNom = cliente.toUpperCase();
+    const destNom = destino ? destino.toUpperCase() : "";
+    const c = await Cliente.findOneAndUpdate({ nombre: cliNom }, { $inc: { deuda: (compra - pago) } }, { new: true });
     if (metodo === 'TRANSFERENCIA' && pago > 0) {
-        await Receptor.findOneAndUpdate({ nombre: destino.toUpperCase() }, { $inc: { saldoRestante: -pago } });
+        await Receptor.findOneAndUpdate({ nombre: destNom }, { $inc: { saldoRestante: -pago } });
     }
-    await new Operacion({...req.body, cliente: cliente.toUpperCase(), deudaCorte: c.deuda}).save();
+    await new Operacion({...req.body, cliente: cliNom, destino: destNom, deudaCorte: c.deuda}).save();
     res.json({ ok: true });
 });
 
-app.get('/api/reporte-caja', async (req, res) => {
-    const { desde, hasta } = req.query;
-    const f1 = new Date(desde); f1.setHours(0,0,0,0);
-    const f2 = new Date(hasta); f2.setHours(23,59,59,999);
-    const ops = await Operacion.find({ fecha: { $gte: f1, $lte: f2 } });
-    const totales = ops.reduce((acc, o) => { acc[o.metodo] = (acc[o.metodo] || 0) + o.pago; return acc; }, {EFECTIVO:0, TRANSFERENCIA:0, TARJETA:0});
-    const deudores = await Cliente.find({ deuda: { $gt: 0 } }).sort({nombre:1});
-    const totalDeudaGeneral = deudores.reduce((sum, d) => sum + d.deuda, 0);
-    const receptores = await Receptor.find().sort({nombre:1});
-    res.json({ totales, deudores, totalDeudaGeneral, receptores });
-});
-
-app.get('/api/historial/:nombre', async (req, res) => res.json(await Operacion.find({ cliente: req.params.nombre.toUpperCase() }).sort({ fecha: 1 })));
-app.get('/api/historial-receptor/:nombre', async (req, res) => res.json(await Operacion.find({ destino: req.params.nombre.toUpperCase() }).sort({ fecha: 1 })));
-
-app.delete('/api/operaciones/:id', async (req, res) => {
-    const op = await Operacion.findById(req.params.id);
-    if(op) {
-        await Cliente.findOneAndUpdate({ nombre: op.cliente }, { $inc: { deuda: -(op.compra - op.pago) } });
-        if(op.metodo === 'TRANSFERENCIA') await Receptor.findOneAndUpdate({ nombre: op.destino }, { $inc: { saldoRestante: op.pago } });
-        await Operacion.findByIdAndDelete(req.params.id);
-    }
-    res.json({ ok: true });
-});
+app.get('/api/receptores', async (req, res) => res.json(await Receptor.find().sort({nombre:1})));
 
 app.post('/api/receptores', async (req, res) => {
     const { nombre, monto } = req.body;
     const n = nombre.toUpperCase();
     let r = await Receptor.findOne({ nombre: n });
-    if (r) { r.montoObjetivo += parseFloat(monto); r.saldoRestante += parseFloat(monto); await r.save(); }
-    else { await new Receptor({ nombre: n, montoObjetivo: monto, saldoRestante: monto }).save(); }
+    if (r) {
+        r.montoObjetivo += parseFloat(monto);
+        r.saldoRestante += parseFloat(monto);
+        await r.save();
+    } else {
+        await new Receptor({ nombre: n, montoObjetivo: monto, saldoRestante: monto }).save();
+    }
     res.json({ ok: true });
 });
+
+app.get('/api/caja-hoy', async (req, res) => {
+    const inicio = new Date(); inicio.setHours(0,0,0,0);
+    const ops = await Operacion.find({ fecha: { $gte: inicio } });
+    const totales = ops.reduce((acc, o) => { acc[o.metodo] = (acc[o.metodo] || 0) + o.pago; return acc; }, {EFECTIVO:0, TRANSFERENCIA:0, TARJETA:0});
+    const deudores = await Cliente.find({ deuda: { $gt: 0 } }).sort({nombre:1});
+    const totalDeuda = deudores.reduce((s,d)=> s + d.deuda, 0);
+    res.json({ totales, deudores, totalDeuda });
+});
+
+app.get('/api/historial/:nombre', async (req, res) => res.json(await Operacion.find({ cliente: req.params.nombre.toUpperCase() }).sort({ fecha: -1 })));
+app.get('/api/historial-receptor/:nombre', async (req, res) => res.json(await Operacion.find({ destino: req.params.nombre.toUpperCase() }).sort({ fecha: -1 })));
+app.delete('/api/receptores/:id', async (req, res) => { await Receptor.findByIdAndDelete(req.params.id); res.json({ok:true}); });
 
 app.use(express.static(__dirname));
 app.get('*', (req, res) => res.sendFile(path.resolve(__dirname, 'index.html')));
