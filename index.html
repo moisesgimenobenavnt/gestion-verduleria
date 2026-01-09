@@ -2,234 +2,149 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión Comercial Oriental</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Oriental Gestión - V. Estable</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f3; margin: 0; padding: 10px; color: #333; }
-        .contenedor { width: 100%; max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); box-sizing: border-box; }
-        .reloje { text-align: center; font-size: 20px; font-weight: 900; color: #004d40; background: #e0f2f1; padding: 12px; border-radius: 12px; margin-bottom: 20px; }
-        .deuda-box { font-size: 45px; color: #b71c1c; text-align: center; font-weight: bold; background: #ffebee; padding: 20px; border-radius: 15px; border: 3px solid #ffcdd2; margin: 15px 0; }
-        input, select { width: 100%; padding: 18px; margin-top: 10px; border: 2px solid #ccc; border-radius: 12px; box-sizing: border-box; font-size: 18px; outline: none; transition: 0.3s; }
-        input:focus { border-color: #2e7d32; }
-        .btn { padding: 18px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 18px; width: 100%; margin-top: 15px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 10px; }
+        .contenedor { width: 100%; max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
+        .reloje { text-align: center; font-size: 14px; color: #666; margin-bottom: 15px; font-weight: bold; }
+        .deuda-box { font-size: 38px; color: #d32f2f; text-align: center; font-weight: bold; background: #ffebee; padding: 15px; border-radius: 10px; border: 2px solid #ffcdd2; margin: 10px 0; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .btn { padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 15px; width: 100%; margin-top: 10px; }
         .btn-verde { background: #2e7d32; color: white; }
         .btn-azul { background: #1565c0; color: white; }
         .btn-rojo { background: #c62828; color: white; }
-        .btn-gris { background: #455a64; color: white; }
-        .flex-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; font-size: 16px; align-items: center; }
-        .flash { animation: parpadeo 0.5s 3; }
-        @keyframes parpadeo { 0% { background: white; } 50% { background: #ccff00; } 100% { background: white; } }
+        .btn-gris { background: #546e7a; color: white; }
+        .flex-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+        #sugerencias { position: absolute; background: white; border: 1px solid #ccc; width: 100%; max-width: 550px; z-index: 100; border-radius: 8px; }
+        .sug-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
         .oculto { display: none; }
-        .item-hist { border-bottom: 1px solid #ddd; padding: 15px 0; position: relative; }
-        @media print { .no-print { display: none; } .contenedor { box-shadow: none; border: none; } }
+        #bloqueo { position: fixed; top:0; left:0; width:100%; height:100%; background:#f0f2f5; z-index:999; display:flex; flex-direction:column; justify-content:center; align-items:center; }
     </style>
 </head>
 <body>
 
-<div id="bloqueo" class="contenedor" style="margin-top: 15vh; text-align: center;">
-    <h2>🔑 Acceso Privado</h2>
-    <input type="password" id="passAcceso" placeholder="Contraseña..." onkeydown="if(event.key==='Enter') validarAcceso()">
-    <button class="btn btn-verde" onclick="validarAcceso()">ENTRAR AL SISTEMA</button>
+<div id="bloqueo">
+    <h2>🔑 Acceso Maestro</h2>
+    <input type="password" id="passAcceso" placeholder="PIN de acceso" style="width: 250px; text-align: center;">
+    <button class="btn btn-verde" style="width: 250px;" onclick="validarAcceso()">ENTRAR</button>
 </div>
 
 <div id="contenidoWeb" class="oculto">
     <div class="contenedor no-print" id="uiBusqueda">
-        <h1 style="text-align: center; color: #2e7d32;">Oriental Gestión</h1>
-        <label>Buscar Cliente:</label>
-        <input type="text" id="inputBusqueda" placeholder="Nombre o Teléfono..." onkeydown="if(event.key==='Enter') buscarOCrear()">
-        <button class="btn btn-verde" onclick="buscarOCrear()">ABRIR FICHA</button>
+        <h2 style="text-align:center;">🔍 Buscar Cliente</h2>
+        <input type="text" id="inputBusqueda" placeholder="Nombre o Teléfono..." oninput="autoCompletar()" onkeydown="if(event.key==='Enter') buscarOCrear()">
+        <div id="sugerencias"></div>
+        <button class="btn btn-verde" onclick="buscarOCrear()">ABRIR / CREAR</button>
     </div>
 
-    <div id="ficha" class="contenedor oculto" style="margin-top:10px;">
-        <div class="reloje" id="reloj"></div>
-        <h2 id="nomDisp" style="text-align:center; margin:0; color:#1565c0; text-transform: uppercase;"></h2>
-        <div class="deuda-box">$ <span id="montoDisp">0</span></div>
-
-        <div id="formMover" class="no-print">
-            <label>🛒 Compra ($):</label>
-            <input type="text" id="compra" placeholder="0" oninput="formatI(this)" onkeydown="if(event.key==='Enter') document.getElementById('pago').focus()">
-            <label>💵 Pago ($):</label>
-            <input type="text" id="pago" placeholder="0" oninput="formatI(this)" onkeydown="if(event.key==='Enter') document.getElementById('metodo').focus()">
-            
-            <label>Forma de Pago:</label>
-            <select id="metodo" onchange="seleccionarMetodo()">
-                <option value="">-- ELIJA MÉTODO --</option>
+    <div id="ficha" class="contenedor oculto" style="margin-top: 10px;">
+        <div class="reloje" id="relojVivo"></div>
+        <h3 id="nombreDisplay" style="text-align:center; margin:0;"></h3>
+        <div style="display:flex; gap:5px; margin-top:10px;">
+            <input type="text" id="telDisplay" placeholder="📞 Teléfono...">
+            <button class="btn btn-azul" style="width:60px; margin:0;" onclick="guardarTel()">💾</button>
+        </div>
+        <div class="deuda-box">$ <span id="deudaDisplay">0</span></div>
+        <div class="no-print">
+            <label>🛒 Compra ($):</label><input type="text" id="gasto" oninput="formatI(this)">
+            <label>💵 Pago ($):</label><input type="text" id="pago" oninput="formatI(this)">
+            <label>💳 Método:</label>
+            <select id="metodo" onchange="verMetodo()">
                 <option value="EFECTIVO">EFECTIVO</option>
                 <option value="TRANSFERENCIA">TRANSFERENCIA</option>
                 <option value="TARJETA">TARJETA</option>
             </select>
-
             <div id="divDestino" class="oculto">
-                <label>🏦 Enviar a:</label>
-                <select id="selDestino"></select>
+                <label>🏦 Receptor:</label><select id="destinoProv"></select>
             </div>
-
-            <button class="btn btn-verde" onclick="guardarOp()">💾 GUARDAR OPERACIÓN</button>
-            <button class="btn btn-gris" onclick="verHistorial()">📋 HISTORIAL COMPLETO</button>
-            <button class="btn btn-rojo" onclick="cerrarFicha()">❌ VOLVER</button>
+            <button class="btn btn-verde" onclick="guardarOp()">GUARDAR MOVIMIENTO</button>
+            <button class="btn btn-gris" onclick="verHistorial()">VER HISTORIAL</button>
+            <button class="btn btn-rojo" onclick="cerrarFicha()">VOLVER</button>
         </div>
-
-        <div id="seccionHist" class="oculto">
-            <h3 style="text-align:center;">MOVIMIENTOS</h3>
-            <div id="listaHist"></div>
-            <button class="btn btn-gris no-print" onclick="window.print()">🖨️ PDF</button>
-            <button class="btn btn-rojo no-print" onclick="cerrarHist()">VOLVER</button>
+        <div id="historialSeccion" class="oculto">
+            <hr><div id="listaHistorial"></div>
+            <button class="btn btn-gris no-print" onclick="window.print()">IMPRIMIR PDF</button>
         </div>
     </div>
 
-    <div class="contenedor no-print" style="margin-top: 30px;">
-        <button class="btn btn-gris" onclick="toggle('rep')">📊 REPORTES Y CAJA</button>
-        <div id="rep" class="oculto" style="padding:15px; border:1px solid #ddd; border-radius:15px; margin-top:10px;">
-            <label>Desde:</label> <input type="date" id="fD">
-            <label>Hasta:</label> <input type="date" id="fH">
-            <button class="btn btn-azul" onclick="cargarCaja()">MOSTRAR DATOS</button>
-            <div id="cajaInfo"></div>
-            <h4>👥 Deudores:</h4>
-            <div id="listaD"></div>
-            <h4>🏦 Receptores:</h4>
-            <div id="listaR"></div>
+    <div class="contenedor" style="margin-top:20px;">
+        <button class="btn btn-gris" onclick="toggle('detCaja')">📊 REPORTES DE HOY</button>
+        <div id="detCaja" class="oculto seccion" style="padding:15px; border: 1px solid #ddd; border-radius:10px;">
+            <div class="flex-row"><span>Efectivo:</span> <b id="cajaEfe">$0</b></div>
+            <div class="flex-row"><span>Transf:</span> <b id="cajaTra">$0</b></div>
+            <div class="flex-row"><span>Tarjeta:</span> <b id="cajaTar">$0</b></div>
             <hr>
-            <input type="text" id="rn" placeholder="Nombre Receptor">
-            <input type="text" id="rm" placeholder="Monto" oninput="formatI(this)">
-            <button class="btn btn-verde" onclick="addRec()">+ AÑADIR MONTO</button>
+            <h4>Deudores Activos:</h4>
+            <div id="listaDeudores"></div>
         </div>
+
+        <button class="btn btn-gris" onclick="toggle('detRec')">🏦 RECEPTORES</button>
+        <div id="detRec" class="oculto seccion" style="padding:15px; border: 1px solid #ddd; border-radius:10px;">
+            <div id="listaReceptores"></div>
+            <hr>
+            <input type="text" id="rn" placeholder="Nombre">
+            <input type="text" id="rm" placeholder="Monto" oninput="formatI(this)">
+            <button class="btn btn-azul" onclick="addRec()">AÑADIR</button>
+        </div>
+        <button class="btn btn-rojo" style="margin-top:100px;" onclick="location.reload()">SALIR</button>
     </div>
 </div>
 
 <script>
-    const CLAVE_M = "moises1";
-    setInterval(() => { document.getElementById('reloj').innerText = new Date().toLocaleString(); }, 1000);
-
+    const API = "/api"; const CLAVE = "2026";
+    setInterval(() => { document.getElementById('relojVivo').innerText = new Date().toLocaleString(); }, 1000);
     function formatI(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? new Intl.NumberFormat('de-DE').format(v) : ""; }
-    function fM(v) { return new Intl.NumberFormat('de-DE').format(v); }
     function limpio(v) { return parseFloat(v.replace(/\./g, "")) || 0; }
+    function fM(v) { return new Intl.NumberFormat('de-DE').format(v); }
 
-    function validarAcceso() {
-        if(document.getElementById('passAcceso').value === "2026") {
-            document.getElementById('bloqueo').classList.add('oculto');
-            document.getElementById('contenidoWeb').classList.remove('oculto');
-            const hoy = new Date().toISOString().split('T')[0];
-            document.getElementById('fD').value = hoy; document.getElementById('fH').value = hoy;
-            cargarCaja();
-        } else alert("Clave Incorrecta");
+    function validarAcceso() { if(document.getElementById('passAcceso').value===CLAVE){document.getElementById('bloqueo').classList.add('oculto');document.getElementById('contenidoWeb').classList.remove('oculto');refrescar();} }
+    function toggle(id) { document.getElementById(id).classList.toggle('oculto'); }
+
+    async function refrescar() {
+        const r1 = await fetch(`${API}/receptores`); const recs = await r1.json();
+        document.getElementById('listaReceptores').innerHTML = recs.map(r => `<div class="flex-row"><span onclick="histR('${r.nombre}')" style="color:blue;cursor:pointer;">${r.nombre}</span><span>Falta: $${fM(r.saldoRestante)}</span><button onclick="borrarR('${r._id}')">❌</button></div>`).join('');
+        document.getElementById('destinoProv').innerHTML = recs.map(r => `<option value="${r.nombre}">${r.nombre}</option>`).join('');
+        const r2 = await fetch(`${API}/caja-hoy`); const caja = await r2.json();
+        document.getElementById('cajaEfe').innerText = `$${fM(caja.totales.EFECTIVO)}`;
+        document.getElementById('cajaTra').innerText = `$${fM(caja.totales.TRANSFERENCIA)}`;
+        document.getElementById('cajaTar').innerText = `$${fM(caja.totales.TARJETA)}`;
+        document.getElementById('listaDeudores').innerHTML = caja.deudores.map(d => `<div class="flex-row" onclick="irA('${d.nombre}')"><span>${d.nombre}</span><b>$${fM(d.deuda)}</b></div>`).join('');
+    }
+
+    async function autoCompletar() {
+        const v = document.getElementById('inputBusqueda').value; if(v.length<2) return;
+        const res = await fetch(`${API}/sugerencias/${v}`); const data = await res.json();
+        document.getElementById('sugerencias').innerHTML = data.map(c => `<div class="sug-item" onclick="irA('${c.nombre}')">${c.nombre}</div>`).join('');
+        document.getElementById('sugerencias').style.display='block';
     }
 
     async function buscarOCrear() {
-        const v = document.getElementById('inputBusqueda').value; if(!v) return;
-        const res = await fetch(`/api/clientes/${v}`); const c = await res.json();
-        abrirFicha(c);
+        const v = document.getElementById('inputBusqueda').value.toUpperCase(); if(!v) return;
+        const res = await fetch(`${API}/clientes/${v}`); const c = await res.json();
+        abrir(c);
     }
 
-    function abrirFicha(c) {
-        document.getElementById('nomDisp').innerText = c.nombre;
-        document.getElementById('montoDisp').innerText = fM(c.deuda);
+    function abrir(c) {
+        document.getElementById('nombreDisplay').innerText = c.nombre;
+        document.getElementById('deudaDisplay').innerText = fM(c.deuda);
+        document.getElementById('telDisplay').value = c.telefono || "";
         document.getElementById('ficha').classList.remove('oculto');
         document.getElementById('uiBusqueda').classList.add('oculto');
-        window.scrollTo(0,0);
+        document.getElementById('sugerencias').style.display='none';
     }
-
-    function seleccionarMetodo() {
-        const m = document.getElementById('metodo').value;
-        const d = document.getElementById('divDestino');
-        if(m === 'TRANSFERENCIA') {
-            d.classList.remove('oculto');
-            d.classList.add('flash'); setTimeout(() => d.classList.remove('flash'), 2000);
-        } else d.classList.add('oculto');
-    }
-
-    async function cargarCaja() {
-        const d = document.getElementById('fD').value;
-        const h = document.getElementById('fH').value;
-        const res = await fetch(`/api/reporte-caja?desde=${d}&hasta=${h}`);
-        const data = await res.json();
-        
-        document.getElementById('cajaInfo').innerHTML = `
-            <div class="flex-row"><span>Efectivo:</span> <b>$${fM(data.totales.EFECTIVO)}</b></div>
-            <div class="flex-row"><span>Tarjeta:</span> <b>$${fM(data.totales.TARJETA)}</b></div>
-            <div class="flex-row"><span>Transferencia:</span> <b>$${fM(data.totales.TRANSFERENCIA)}</b></div>
-            <div class="flex-row" style="border-top:2px solid #000"><span>TOTAL DEUDAS:</span> <b style="color:red">$${fM(data.totalDeudaGeneral)}</b></div>
-        `;
-
-        document.getElementById('listaD').innerHTML = data.deudores.map(o => `
-            <div class="flex-row" onclick="irACliente('${o.nombre}')"><span>${o.nombre}</span> <b style="color:red">$${fM(o.deuda)}</b></div>
-        `).join('');
-
-        document.getElementById('listaR').innerHTML = data.receptores.map(r => {
-            let color = r.saldoRestante > 50000 ? "green" : (r.saldoRestante > 0 ? "orange" : "#00ff00");
-            let texto = r.saldoRestante <= 0 ? "SUPERÁVIT" : "FALTA";
-            return `<div class="flex-row">
-                <span style="color:blue; cursor:pointer;" onclick="histRec('${r.nombre}')">${r.nombre} (FIJO: $${fM(r.montoObjetivo)})</span>
-                <b style="color:${color}">${texto}: $${fM(Math.abs(r.saldoRestante))}</b>
-            </div>`;
-        }).join('');
-
-        document.getElementById('selDestino').innerHTML = data.receptores.map(r => `<option value="${r.nombre}">${r.nombre}</option>`).join('');
-    }
-
-    async function irACliente(n) { const res = await fetch(`/api/clientes/${n}`); const c = await res.json(); abrirFicha(c); }
 
     async function guardarOp() {
-        if(!document.getElementById('metodo').value) { alert("¡Debe elegir la Forma de Pago!"); return; }
-        const body = {
-            cliente: document.getElementById('nomDisp').innerText,
-            compra: limpio(document.getElementById('compra').value),
-            pago: limpio(document.getElementById('pago').value),
-            metodo: document.getElementById('metodo').value,
-            destino: document.getElementById('selDestino').value
-        };
-        await fetch('/api/operaciones', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-        alert("Guardado"); cerrarFicha(); cargarCaja();
+        const body = { cliente: document.getElementById('nombreDisplay').innerText, compra: limpio(document.getElementById('gasto').value), pago: limpio(document.getElementById('pago').value), metodo: document.getElementById('metodo').value, destino: document.getElementById('destinoProv').value };
+        await fetch(`${API}/operaciones`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        cerrarFicha(); refrescar();
     }
 
-    async function verHistorial() {
-        const res = await fetch(`/api/historial/${document.getElementById('nomDisp').innerText}`);
-        const data = await res.json();
-        document.getElementById('listaHist').innerHTML = data.map(h => `
-            <div class="item-hist">
-                <b>${new Date(h.fecha).toLocaleString()}</b><br>
-                Compra: $${fM(h.compra)} | Pago: $${fM(h.pago)} (${h.metodo} ${h.destino||''})<br>
-                Saldo: <b style="color:red">$${fM(h.deudaCorte)}</b>
-                <button onclick="borrarOp('${h._id}')" style="position:absolute; right:0; top:15px; background:none; border:none; cursor:pointer;">🗑️</button>
-            </div>
-        `).join('');
-        document.getElementById('formMover').classList.add('oculto');
-        document.getElementById('seccionHist').classList.remove('oculto');
-    }
-
-    async function histRec(nom) {
-        const res = await fetch(`/api/historial-receptor/${nom}`);
-        const data = await res.json();
-        document.getElementById('nomDisp').innerText = "REC: " + nom;
-        document.getElementById('listaHist').innerHTML = data.map(h => `
-            <div class="item-hist">
-                <b>${new Date(h.fecha).toLocaleString()}</b><br>
-                Cliente: ${h.cliente} | Pago: $${fM(h.pago)}
-            </div>
-        `).join('');
-        document.getElementById('ficha').classList.remove('oculto');
-        document.getElementById('uiBusqueda').classList.add('oculto');
-        document.getElementById('formMover').classList.add('oculto');
-        document.getElementById('seccionHist').classList.remove('oculto');
-    }
-
-    async function borrarOp(id) {
-        if(prompt("Introduzca Contraseña Maestra:") === CLAVE_M) {
-            await fetch(`/api/operaciones/${id}`, { method: 'DELETE' });
-            alert("Eliminado"); verHistorial(); cargarCaja();
-        } else alert("Contraseña incorrecta");
-    }
-
-    function cerrarFicha() {
-        document.getElementById('ficha').classList.add('oculto');
-        document.getElementById('uiBusqueda').classList.remove('oculto');
-        document.getElementById('compra').value = ""; document.getElementById('pago').value = "";
-    }
-    function cerrarHist() { document.getElementById('seccionHist').classList.add('oculto'); document.getElementById('formMover').classList.remove('oculto'); }
-    function toggle(id) { document.getElementById(id).classList.toggle('oculto'); }
-    async function addRec() {
-        await fetch('/api/receptores', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ nombre: document.getElementById('rn').value, monto: limpio(document.getElementById('rm').value) }) });
-        cargarCaja();
-    }
+    async function irA(n) { const res = await fetch(`${API}/clientes/${n}`); const c = await res.json(); abrir(c); }
+    function cerrarFicha() { document.getElementById('ficha').classList.add('oculto'); document.getElementById('uiBusqueda').classList.remove('oculto'); document.getElementById('inputBusqueda').value=""; }
+    function verMetodo() { document.getElementById('divDestino').classList.toggle('oculto', document.getElementById('metodo').value !== 'TRANSFERENCIA'); }
+    async function addRec() { await fetch(`${API}/receptores`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ nombre: document.getElementById('rn').value, monto: limpio(document.getElementById('rm').value) }) }); refrescar(); }
+    async function borrarR(id) { const p = prompt("Clave:"); if(p==="moises1") { await fetch(`${API}/receptores/${id}`, { method:'DELETE' }); refrescar(); } }
 </script>
 </body>
 </html>
