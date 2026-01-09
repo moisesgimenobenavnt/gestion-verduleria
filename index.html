@@ -2,206 +2,241 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión Comercial Elite</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestión Comercial ORIENTAL</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-        .pantalla-inicio { min-height: 90vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .contenedor { width: 100%; max-width: 600px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        .seccion { border: 1px solid #e0e0e0; padding: 15px; border-radius: 10px; margin-bottom: 20px; background: #fff; }
-        .deuda-box { font-size: 38px; color: #d32f2f; text-align: center; font-weight: bold; background: #ffebee; padding: 15px; border-radius: 10px; border: 2px solid #ffcdd2; margin: 10px 0; }
-        .btn { padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 15px; width: 100%; margin-top: 10px; }
-        .btn-verde { background: #28a745; color: white; }
-        .btn-azul { background: #007bff; color: white; }
-        .btn-rojo { background: #dc3545; color: white; }
-        .btn-gris { background: #6c757d; color: white; }
-        .flex-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-        #sugerencias { position: absolute; background: white; border: 1px solid #ccc; width: 100%; max-width: 550px; z-index: 100; border-radius: 8px; }
-        .sug-item { padding: 14px; cursor: pointer; border-bottom: 1px solid #eee; }
-        .reloje { text-align: center; font-size: 14px; color: #666; margin-bottom: 10px; font-weight: bold; }
-        .hist-item { font-size: 12px; padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
-        .negativo { color: #c53030; font-weight: bold; }
-        .positivo { color: #276749; font-weight: bold; }
-        #bloqueo { position: fixed; top:0; left:0; width:100%; height:100%; background:#f0f2f5; z-index:999; display:flex; flex-direction:column; justify-content:center; align-items:center; }
-        .secretos { margin-top: 200px; opacity: 0.9; }
-        @media print { .no-print { display: none; } }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; color: #1a1a1a; }
+        .contenedor { width: 100%; max-width: 650px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); box-sizing: border-box; }
+        .reloje { text-align: center; font-size: 20px; color: #004d40; margin-bottom: 20px; font-weight: 900; background: #e0f2f1; padding: 15px; border-radius: 12px; border: 1px solid #b2dfdb; }
+        .deuda-box { font-size: 42px; color: #b71c1c; text-align: center; font-weight: bold; background: #ffebee; padding: 20px; border-radius: 15px; border: 3px solid #ffcdd2; margin: 15px 0; }
+        input, select { width: 100%; padding: 16px; margin-top: 8px; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 18px; outline: none; transition: 0.3s; }
+        input:focus { border-color: #2e7d32; }
+        .btn { padding: 18px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 12px; transition: 0.2s; }
+        .btn-verde { background: #2e7d32; color: white; }
+        .btn-azul { background: #1565c0; color: white; }
+        .btn-rojo { background: #c62828; color: white; }
+        .btn-gris { background: #455a64; color: white; }
+        .flex-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; font-size: 16px; align-items: center; }
+        .sugerencias { position: absolute; background: white; border: 1px solid #ccc; width: 90%; z-index: 100; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; }
+        .sug-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 18px; }
+        .oculto { display: none; }
+        .item-historial { border-bottom: 1px solid #ddd; padding: 12px 0; font-size: 14px; }
+        @media print { .no-print { display: none !important; } .contenedor { box-shadow: none; border: none; width: 100%; max-width: 100%; } body { background: white; } }
     </style>
 </head>
 <body>
 
-<div id="bloqueo" class="no-print">
-    <h1>🥦 Acceso Privado</h1>
-    <input type="password" id="passAcceso" placeholder="Contraseña" style="width: 250px; text-align: center; padding: 12px; border-radius: 8px; border: 1px solid #ccc;">
-    <button class="btn btn-verde" style="width: 250px;" onclick="validarAcceso()">ENTRAR</button>
-</div>
-
-<div class="pantalla-inicio no-print" id="uiBusqueda" style="display:none;">
-    <div class="contenedor">
-        <h2>🔍 Buscar Cliente / Tel</h2>
-        <input type="text" id="inputBusqueda" placeholder="Ej: Ramon o 1123..." oninput="autoCompletar()" autocomplete="off" style="width:100%; padding:15px; font-size:18px; border-radius: 8px; border: 1px solid #ccc;">
-        <div id="sugerencias"></div>
-        <button class="btn btn-verde" onclick="buscarOCrear()">ABRIR FICHA</button>
+<div id="bloqueo">
+    <div class="contenedor" style="margin-top: 20vh; text-align: center;">
+        <h2>🔑 Acceso Privado</h2>
+        <input type="password" id="passAcceso" placeholder="Introduce la Clave 2026" style="text-align: center;">
+        <button class="btn btn-verde" onclick="validarAcceso()">ENTRAR AL SISTEMA</button>
     </div>
-    <p style="color:#999; margin-top:40px;">⬇️ Desliza para reportes ⬇️</p>
 </div>
 
-<div id="ficha" class="contenedor" style="display:none; margin: 20px auto;">
-    <div class="reloje" id="relojVivo"></div>
-    <h3 id="nombreDisplay" style="margin:0; text-align:center;"></h3>
-    <div class="deuda-box">$ <span id="deudaDisplay">0</span></div>
-    
-    <div class="no-print">
-        <label>🛒 Compra ($):</label><input type="number" id="gasto" value="0">
-        <label>💵 Pago hoy ($):</label><input type="number" id="pago" value="0">
-        <label>💳 Método:</label>
-        <select id="metodo" onchange="verMetodo()">
-            <option value="EFECTIVO">Efectivo</option>
-            <option value="TRANSFERENCIA">Transferencia</option>
-            <option value="TARJETA">Tarjeta</option>
-        </select>
-        <div id="divDestino" style="display:none;">
-            <label>🏦 Enviar a:</label>
-            <select id="destinoProv"></select>
+<div id="contenidoWeb" class="oculto">
+    <div class="contenedor no-print" id="uiBusqueda" style="min-height: 70vh; display: flex; flex-direction: column; justify-content: center;">
+        <h1 style="text-align: center; color: #2e7d32;">Verduleria Oriental</h1>
+        <label>Buscar Cliente o Teléfono:</label>
+        <input type="text" id="inputBusqueda" placeholder="Escribe el nombre..." oninput="autoCompletar()" onkeydown="if(event.key==='Enter') buscarOCrear()">
+        <div id="sugerencias" class="sugerencias"></div>
+        <button class="btn btn-verde" onclick="buscarOCrear()">ABRIR / CREAR FICHA</button>
+    </div>
+
+    <div id="ficha" class="contenedor oculto">
+        <div class="reloje" id="relojVivo"></div>
+        <h2 id="nombreDisplay" style="text-align:center; margin:0; color: #1565c0;"></h2>
+        
+        <div id="uiTel" class="no-print" style="display:flex; gap:10px; margin-bottom: 10px;">
+            <input type="text" id="telDisplay" placeholder="Añadir Teléfono...">
+            <button class="btn btn-azul" style="width: 80px; margin-top: 8px;" onclick="guardarTel()">💾</button>
         </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-            <button class="btn btn-azul" onclick="guardarOp()">GUARDAR</button>
-            <button class="btn btn-gris" onclick="verHistorial()">HISTORIAL</button>
+
+        <div class="deuda-box" id="cajaMonto">$ <span id="montoDisplay">0</span></div>
+
+        <div id="formMovimiento" class="no-print">
+            <label>🛒 Compra Monto ($):</label>
+            <input type="text" id="gasto" placeholder="0" oninput="formatI(this)" onkeydown="if(event.key==='Enter') document.getElementById('pago').focus()">
+            <label>💵 Pago Realizado ($):</label>
+            <input type="text" id="pago" placeholder="0" oninput="formatI(this)" onkeydown="if(event.key==='Enter') document.getElementById('btnGuardar').focus()">
+            
+            <label>💳 Forma de Pago:</label>
+            <select id="metodo" onchange="verMetodo()">
+                <option value="EFECTIVO">EFECTIVO</option>
+                <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+                <option value="TARJETA">TARJETA</option>
+            </select>
+            <div id="divDestino" class="oculto">
+                <label>🏦 Receptor del dinero:</label>
+                <select id="destinoProv"></select>
+            </div>
+            <button class="btn btn-verde" id="btnGuardar" onclick="guardarOp()">💾 GUARDAR OPERACIÓN</button>
+            <button class="btn btn-gris" onclick="verHistorialFull()">📋 VER TODO EL HISTORIAL</button>
+            <button class="btn btn-rojo" onclick="cerrarFicha()">❌ CERRAR / VOLVER</button>
         </div>
-        <button class="btn btn-rojo" onclick="cerrarFicha()">CERRAR / NUEVO</button>
+
+        <div id="seccionHistorial" class="oculto">
+            <h3 style="text-align:center; border-bottom: 2px solid #2e7d32; padding-bottom: 10px;">HISTORIAL DE MOVIMIENTOS</h3>
+            <div id="listaHistorial"></div>
+            <button class="btn btn-gris no-print" onclick="window.print()">🖨️ GENERAR PDF / IMPRIMIR</button>
+            <button class="btn btn-rojo no-print" onclick="cerrarFicha()">VOLVER</button>
+        </div>
     </div>
 
-    <div id="historialSeccion" style="display:none; margin-top:20px;">
-        <hr>
-        <div id="listaHistorial"></div>
-        <button class="btn btn-gris no-print" onclick="window.print()">IMPRIMIR PDF</button>
-    </div>
-</div>
-
-<div class="pantalla-inicio secretos no-print" id="uiReportes" style="display:none;">
-    <div class="contenedor seccion">
-        <h3>📊 Resumen de Hoy</h3>
-        <button class="btn btn-gris" onclick="toggleD('detCaja')">Ver Caja y Deudores</button>
-        <div id="detCaja" style="display:none;">
-            <div class="flex-row"><span>Efectivo:</span> <b id="cajaEfe">$0</b></div>
-            <div class="flex-row"><span>Transferencia:</span> <b id="cajaTra">$0</b></div>
-            <div class="flex-row"><span>Tarjetas:</span> <b id="cajaTar">$0</b></div>
+    <div class="contenedor no-print" style="margin-top: 80px;">
+        <button class="btn btn-gris" onclick="toggle('bloqueReportes')">📊 VER CAJA, DEUDORES Y RECEPTORES</button>
+        <div id="bloqueReportes" class="oculto" style="padding: 15px; background: #fafafa; border-radius: 15px; margin-top: 10px; border: 1px solid #ddd;">
+            <label>Desde:</label><input type="date" id="fDesde">
+            <label>Hasta:</label><input type="date" id="fHasta">
+            <button class="btn btn-azul" onclick="cargarCaja()">MOSTRAR RANGO</button>
+            
             <hr>
-            <h4>Gente con deuda acumulada:</h4>
+            <h4>💰 Totales en Caja:</h4>
+            <div class="flex-row"><span>Efectivo:</span> <b id="totalEfe">$0</b></div>
+            <div class="flex-row"><span>Transferencias:</span> <b id="totalTra">$0</b></div>
+            <div class="flex-row"><span>Tarjeta:</span> <b id="totalTar">$0</b></div>
+            
+            <hr>
+            <h4>👥 Gente con Deuda:</h4>
             <div id="listaDeudores"></div>
-        </div>
-    </div>
 
-    <div class="contenedor seccion">
-        <h3>🏦 Receptores</h3>
-        <div id="listaReceptores"></div>
-        <hr>
-        <input type="text" id="r_nom" placeholder="Nombre">
-        <input type="number" id="r_mon" placeholder="Monto Total">
-        <button class="btn btn-azul" onclick="addReceptor()">AÑADIR / ACTUALIZAR</button>
+            <hr>
+            <h4>🏦 Estado de Receptores:</h4>
+            <div id="listaReceptores"></div>
+            
+            <div style="background: #eee; padding: 10px; border-radius: 10px; margin-top: 15px;">
+                <label>Añadir/Actualizar Receptor:</label>
+                <input type="text" id="rn" placeholder="Nombre (Gerardo, Moisés...)">
+                <input type="text" id="rm" placeholder="Monto a sumar" oninput="formatI(this)">
+                <button class="btn btn-azul" onclick="addRec()">SUMAR MONTO</button>
+            </div>
+        </div>
+        <button class="btn btn-rojo" style="margin-top: 100px;" onclick="location.reload()">CERRAR SESIÓN</button>
     </div>
-    <button class="btn btn-rojo" onclick="cerrarSesion()">CERRAR SESIÓN</button>
 </div>
 
 <script>
-    const API = "/api";
-    const CLAVE = "2026";
-    const fM = (n) => new Intl.NumberFormat('de-DE').format(n); // Función para puntos de mil
+    const CLAVE = "2026"; let cliID = "";
+    setInterval(() => { 
+        const now = new Date();
+        document.getElementById('relojVivo').innerHTML = `<b>${now.toLocaleDateString()} - ${now.toLocaleTimeString()}</b>`;
+    }, 1000);
 
-    setInterval(() => { document.getElementById('relojVivo').innerText = new Date().toLocaleString(); }, 1000);
+    function formatI(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? new Intl.NumberFormat('de-DE').format(v) : ""; }
+    function limpio(v) { return parseFloat(v.replace(/\./g, "")) || 0; }
+    function fM(v) { return new Intl.NumberFormat('de-DE').format(v); }
 
-    window.onload = () => { if(localStorage.getItem('verduOK')==='si') mostrar(); };
-    function validarAcceso() { if(document.getElementById('passAcceso').value===CLAVE) { localStorage.setItem('verduOK','si'); mostrar(); } else alert("Error"); }
-    function mostrar() { document.getElementById('bloqueo').style.display='none'; document.getElementById('uiBusqueda').style.display='flex'; document.getElementById('uiReportes').style.display='flex'; refrescar(); }
-    function cerrarSesion() { localStorage.removeItem('verduOK'); location.reload(); }
-    function toggleD(id) { const e=document.getElementById(id); e.style.display=e.style.display==='none'?'block':'none'; }
+    function validarAcceso() { if(document.getElementById('passAcceso').value===CLAVE){document.getElementById('bloqueo').classList.add('oculto'); document.getElementById('contenidoWeb').classList.remove('oculto'); init();} else alert("Clave Incorrecta"); }
+    function toggle(id) { document.getElementById(id).classList.toggle('oculto'); }
+    
+    function init() {
+        const hoy = new Date().toISOString().split('T')[0];
+        document.getElementById('fDesde').value = hoy;
+        document.getElementById('fHasta').value = hoy;
+        cargarCaja();
+    }
 
-    async function refrescar() {
-        const r1 = await fetch(`${API}/receptores`);
-        const recs = await r1.json();
-        document.getElementById('listaReceptores').innerHTML = recs.map(r => `
+    async function cargarCaja() {
+        const d = document.getElementById('fDesde').value;
+        const h = document.getElementById('fHasta').value;
+        const res = await fetch(`/api/reporte-caja?desde=${d}&hasta=${h}`);
+        const data = await res.json();
+        
+        document.getElementById('totalEfe').innerText = `$${fM(data.totales.EFECTIVO)}`;
+        document.getElementById('totalTra').innerText = `$${fM(data.totales.TRANSFERENCIA)}`;
+        document.getElementById('totalTar').innerText = `$${fM(data.totales.TARJETA)}`;
+
+        document.getElementById('listaDeudores').innerHTML = data.deudores.map(o => `
+            <div class="flex-row" onclick="cargarFicha('${o.nombre}','${o.telefono}',${o.deuda},'${o._id}')">
+                <span>${o.nombre}</span><b style="color:red;">$${fM(o.deuda)}</b>
+            </div>`).join('');
+
+        document.getElementById('listaReceptores').innerHTML = data.receptores.map(r => `
             <div class="flex-row">
-                <span style="color:blue; cursor:pointer;" onclick="histReceptor('${r.nombre}')"><b>${r.nombre}</b></span>
-                <span>Falta: <b class="negativo">$${fM(r.saldoRestante)}</b> / Total: $${fM(r.montoObjetivo)}</span>
+                <span style="color:blue; cursor:pointer;" onclick="verHistorialRec('${r.nombre}')"><b>${r.nombre}</b></span>
+                <span>Falta: <b style="color:red;">$${fM(r.saldoRestante)}</b></span>
                 <button onclick="borrarR('${r._id}')" style="background:none; border:none;">❌</button>
             </div>`).join('');
-        document.getElementById('destinoProv').innerHTML = recs.map(r => `<option value="${r.nombre}">${r.nombre}</option>`).join('');
-
-        const r2 = await fetch(`${API}/caja-hoy`);
-        const caja = await r2.json();
-        document.getElementById('cajaEfe').innerText = `$${fM(caja.totales.EFECTIVO)}`;
-        document.getElementById('cajaTra').innerText = `$${fM(caja.totales.TRANSFERENCIA)}`;
-        document.getElementById('cajaTar').innerText = `$${fM(caja.totales.TARJETA)}`;
-        document.getElementById('listaDeudores').innerHTML = caja.deudores.map(d => `<div class="flex-row"><span>${d.nombre}</span><b>$${fM(d.deuda)}</b></div>`).join('');
+        document.getElementById('destinoProv').innerHTML = data.receptores.map(r => `<option value="${r.nombre}">${r.nombre}</option>`).join('');
     }
 
     async function autoCompletar() {
-        const v = document.getElementById('inputBusqueda').value;
-        if(v.length < 2) return;
-        const res = await fetch(`${API}/sugerencias/${v}`);
-        const data = await res.json();
-        document.getElementById('sugerencias').innerHTML = data.map(c => `<div class="sug-item" onclick="cargar('${c.nombre}','${c.deuda}')">${c.nombre} ($${fM(c.deuda)})</div>`).join('');
+        const v = document.getElementById('inputBusqueda').value; if(v.length<2) return;
+        const res = await fetch(`/api/sugerencias/${v}`); const data = await res.json();
+        document.getElementById('sugerencias').innerHTML = data.map(c => `<div class="sug-item" onclick="cargarFicha('${c.nombre}','${c.telefono}',${c.deuda},'${c._id}')">${c.nombre}</div>`).join('');
         document.getElementById('sugerencias').style.display = 'block';
     }
 
     async function buscarOCrear() {
-        const v = document.getElementById('inputBusqueda').value.toUpperCase();
-        if(!v) return;
-        const res = await fetch(`${API}/clientes/${v}`);
-        const c = await res.json();
-        cargar(c.nombre, c.deuda);
+        const v = document.getElementById('inputBusqueda').value.toUpperCase(); if(!v) return;
+        const res = await fetch(`/api/clientes/${v}`); const c = await res.json();
+        cargarFicha(c.nombre, c.telefono, c.deuda, c._id);
     }
 
-    function cargar(nom, deu) {
-        document.getElementById('nombreDisplay').innerText = nom;
-        document.getElementById('deudaDisplay').innerText = fM(deu);
-        document.getElementById('gasto').value = 0;
-        document.getElementById('pago').value = 0;
-        document.getElementById('ficha').style.display = 'block';
-        document.getElementById('uiBusqueda').style.display = 'none';
+    function cargarFicha(nom, tel, deu, id) {
+        cliID = id; document.getElementById('nombreDisplay').innerText = nom;
+        document.getElementById('telDisplay').value = tel || "";
+        document.getElementById('montoDisplay').innerText = fM(deu);
+        document.getElementById('gasto').value = ""; document.getElementById('pago').value = "";
+        document.getElementById('ficha').classList.remove('oculto');
+        document.getElementById('uiBusqueda').classList.add('oculto');
         document.getElementById('sugerencias').style.display = 'none';
-        document.getElementById('historialSeccion').style.display = 'none';
+        document.getElementById('formMovimiento').classList.remove('oculto');
+        document.getElementById('seccionHistorial').classList.add('oculto');
+        document.getElementById('cajaMonto').classList.remove('oculto');
+        document.getElementById('uiTel').classList.remove('oculto');
     }
 
-    function cerrarFicha() {
-        document.getElementById('ficha').style.display = 'none';
-        document.getElementById('uiBusqueda').style.display = 'flex';
-        document.getElementById('inputBusqueda').value = '';
+    async function guardarTel() {
+        await fetch('/api/clientes/update-tel', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id: cliID, telefono: document.getElementById('telDisplay').value }) });
+        alert("Teléfono Guardado");
     }
 
     async function guardarOp() {
-        const op = { cliente: document.getElementById('nombreDisplay').innerText, compra: parseFloat(document.getElementById('gasto').value), pago: parseFloat(document.getElementById('pago').value), metodo: document.getElementById('metodo').value, destino: document.getElementById('destinoProv').value };
-        await fetch(`${API}/operaciones`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(op) });
-        alert("Guardado");
-        cerrarFicha();
-        refrescar();
+        const op = { cliente: document.getElementById('nombreDisplay').innerText, compra: limpio(document.getElementById('gasto').value), pago: limpio(document.getElementById('pago').value), metodo: document.getElementById('metodo').value, destino: document.getElementById('destinoProv').value };
+        await fetch('/api/operaciones', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(op) });
+        alert("Operación Guardada"); cerrarFicha(); cargarCaja();
     }
 
-    async function verHistorial() {
-        const res = await fetch(`${API}/historial/${document.getElementById('nombreDisplay').innerText}`);
+    async function verHistorialFull() {
+        const res = await fetch(`/api/historial/${document.getElementById('nombreDisplay').innerText}`);
         const data = await res.json();
         document.getElementById('listaHistorial').innerHTML = data.map(h => `
-            <div class="hist-item">
-                <span><b>${new Date(h.fecha).toLocaleString()}</b></span>
-                <span class="negativo">C: $${fM(h.compra)}</span>
-                <span class="positivo">P: $${fM(h.pago)}</span>
+            <div class="item-historial">
+                <b>${new Date(h.fecha).toLocaleString()}</b><br>
+                Compra: $${fM(h.compra)} | Pago: $${fM(h.pago)} (${h.metodo})<br>
+                <span style="color:red;">Deuda Acumulada: $${fM(h.deudaCorte)}</span>
             </div>`).join('');
-        document.getElementById('historialSeccion').style.display = 'block';
+        document.getElementById('formMovimiento').classList.add('oculto');
+        document.getElementById('seccionHistorial').classList.remove('oculto');
     }
 
-    async function histReceptor(nom) {
-        const res = await fetch(`${API}/historial-receptor/${nom}`);
+    async function verHistorialRec(nom) {
+        const res = await fetch(`/api/historial-receptor/${nom}`);
         const data = await res.json();
-        alert("Envíos a " + nom + ":\n" + data.map(h => `${new Date(h.fecha).toLocaleDateString()} - $${fM(h.pago)} (de ${h.cliente})`).join('\n'));
+        document.getElementById('nombreDisplay').innerText = "REPORTE DE: " + nom;
+        document.getElementById('cajaMonto').classList.add('oculto');
+        document.getElementById('uiTel').classList.add('oculto');
+        document.getElementById('formMovimiento').classList.add('oculto');
+        document.getElementById('listaHistorial').innerHTML = data.map(h => `
+            <div class="item-historial">
+                <b>${new Date(h.fecha).toLocaleString()}</b><br>
+                De: ${h.cliente} | Monto: $${fM(h.pago)}
+            </div>`).join('');
+        document.getElementById('seccionHistorial').classList.remove('oculto');
+        document.getElementById('ficha').classList.remove('oculto');
+        document.getElementById('uiBusqueda').classList.add('oculto');
     }
 
-    async function addReceptor() {
+    function cerrarFicha() { document.getElementById('ficha').classList.add('oculto'); document.getElementById('uiBusqueda').classList.remove('oculto'); document.getElementById('inputBusqueda').value=""; }
+    
+    async function addRec() {
         const p = prompt("Clave:"); if(p!==CLAVE) return;
-        await fetch(`${API}/receptores`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ nombre: document.getElementById('r_nom').value, monto: document.getElementById('r_mon').value }) });
-        document.getElementById('r_nom').value=''; document.getElementById('r_mon').value='';
-        refrescar();
+        await fetch('/api/receptores', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ nombre: document.getElementById('rn').value, monto: limpio(document.getElementById('rm').value) }) });
+        cargarCaja(); document.getElementById('rn').value=""; document.getElementById('rm').value="";
     }
-
-    async function borrarR(id) { const p = prompt("Clave:"); if(p!==CLAVE) return; await fetch(`${API}/receptores/${id}`, { method: 'DELETE' }); refrescar(); }
-    function verMetodo() { document.getElementById('divDestino').style.display = document.getElementById('metodo').value === 'TRANSFERENCIA' ? 'block' : 'none'; }
+    async function borrarR(id) { const p = prompt("Clave:"); if(p!==CLAVE) return; await fetch(`/api/receptores/${id}`, { method: 'DELETE' }); cargarCaja(); }
+    function verMetodo() { document.getElementById('divDestino').classList.toggle('oculto', document.getElementById('metodo').value !== 'TRANSFERENCIA'); }
 </script>
 </body>
 </html>
