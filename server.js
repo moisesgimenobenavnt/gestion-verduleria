@@ -32,7 +32,6 @@ const Operacion = mongoose.model('Operacion', new mongoose.Schema({
     deudaCorte: Number
 }));
 
-// API
 app.get('/api/clientes/:val', async (req, res) => {
     const v = req.params.val.toUpperCase();
     let c = await Cliente.findOne({ $or: [{nombre: v}, {telefono: v}] });
@@ -44,7 +43,7 @@ app.post('/api/operaciones', async (req, res) => {
     const { cliente, compra, pago, metodo, destino } = req.body;
     const c = await Cliente.findOneAndUpdate({ nombre: cliente.toUpperCase() }, { $inc: { deuda: (compra - pago) } }, { new: true });
     if (metodo === 'TRANSFERENCIA' && pago > 0) {
-        await Receptor.findOneAndUpdate({ nombre: (destino||"").toUpperCase() }, { $inc: { saldoRestante: -pago } });
+        await Receptor.findOneAndUpdate({ nombre: destino.toUpperCase() }, { $inc: { saldoRestante: -pago } });
     }
     await new Operacion({...req.body, cliente: cliente.toUpperCase(), deudaCorte: c.deuda}).save();
     res.json({ ok: true });
@@ -57,11 +56,13 @@ app.get('/api/reporte-caja', async (req, res) => {
     const ops = await Operacion.find({ fecha: { $gte: f1, $lte: f2 } });
     const totales = ops.reduce((acc, o) => { acc[o.metodo] = (acc[o.metodo] || 0) + o.pago; return acc; }, {EFECTIVO:0, TRANSFERENCIA:0, TARJETA:0});
     const deudores = await Cliente.find({ deuda: { $gt: 0 } }).sort({nombre:1});
+    const totalDeudaGeneral = deudores.reduce((sum, d) => sum + d.deuda, 0);
     const receptores = await Receptor.find().sort({nombre:1});
-    res.json({ totales, deudores, receptores });
+    res.json({ totales, deudores, totalDeudaGeneral, receptores });
 });
 
 app.get('/api/historial/:nombre', async (req, res) => res.json(await Operacion.find({ cliente: req.params.nombre.toUpperCase() }).sort({ fecha: 1 })));
+app.get('/api/historial-receptor/:nombre', async (req, res) => res.json(await Operacion.find({ destino: req.params.nombre.toUpperCase() }).sort({ fecha: 1 })));
 
 app.delete('/api/operaciones/:id', async (req, res) => {
     const op = await Operacion.findById(req.params.id);
