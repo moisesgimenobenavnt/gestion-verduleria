@@ -3,607 +3,530 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gestión Comercial - SaaS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>Sistema de Gestión SaaS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <style>
         :root {
             --bg-body: #eceff1;
-            --bg-header: #263238;
-            --color-rojo-neon: #ff1744;
-            --color-verde-neon: #00e676;
-            --color-alerta: #d50000;
-            --negro-fila: #222;
+            --header: #212121;
+            --rojo: #d50000;
+            --verde: #00c853;
+            --amarillo: #ffd600;
+            --negro-borrado: #000;
         }
-        body { font-family: 'Roboto', sans-serif; background: var(--bg-body); margin: 0; padding: 0; padding-bottom: 60px; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg-body); margin: 0; padding: 0; padding-bottom: 50px; }
         
         /* UTILIDADES */
         .oculto { display: none !important; }
-        .full-width { width: 100%; box-sizing: border-box; }
-        .texto-rojo { color: var(--color-alerta); font-weight: bold; }
-        .texto-verde { color: var(--color-verde-neon); font-weight: bold; text-shadow: 0 0 2px #000; }
-        
-        /* FOOTER DE MARCA (Moisés Gimeno) */
-        .footer-marca {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: #111; color: #555; text-align: center;
-            padding: 5px; font-size: 10px; z-index: 99999;
-            border-top: 1px solid #333;
-        }
-        .footer-marca span { color: #888; }
+        .texto-rojo { color: var(--rojo); font-weight: bold; }
+        .full { width: 100%; box-sizing: border-box; }
 
-        /* ANIMACIÓN FLASH */
-        @keyframes flash-fosforito {
-            0% { background-color: #fff; }
-            50% { background-color: #ffff00; box-shadow: 0 0 20px #ffff00; }
-            100% { background-color: #fff; }
-        }
-        .animacion-flash { animation: flash-fosforito 0.2s ease-in-out 5; }
-
-        /* LOGIN SAAS */
+        /* LOGIN UNIFICADO */
         #pantallaLogin {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999;
-            background: linear-gradient(135deg, #000 0%, #333 100%);
+            background: #fff;
             display: flex; justify-content: center; align-items: center; flex-direction: column;
         }
-        .login-card { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 350px; text-align: center; }
-        .input-login { width: 100%; padding: 15px; margin: 10px 0; border: 2px solid #ccc; border-radius: 8px; font-size: 18px; text-align: center; box-sizing: border-box; }
-        .btn-login { width: 100%; padding: 15px; background: #000; color: #fff; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; }
+        .login-box { text-align: center; width: 80%; max-width: 300px; }
+        .input-login {
+            width: 100%; padding: 15px; margin: 10px 0; border: 2px solid #333; 
+            border-radius: 5px; font-size: 18px; text-align: center; text-transform: uppercase;
+        }
+        .btn-entrar {
+            width: 100%; padding: 15px; background: #000; color: #fff; 
+            border: none; font-size: 18px; font-weight: bold; cursor: pointer;
+        }
+
+        /* ALERTA BACKUP (Solo Dueño/Dev) */
+        #modalBackup {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(200, 0, 0, 0.95); z-index: 10000;
+            display: flex; justify-content: center; align-items: center; flex-direction: column; color: white;
+            text-align: center; padding: 20px;
+        }
+        .btn-backup {
+            background: white; color: red; font-size: 20px; padding: 20px; 
+            border: none; font-weight: bold; margin-top: 20px; cursor: pointer; border-radius: 10px;
+        }
 
         /* HEADER */
-        #headerCliente { background: #fff; height: 60px; display: flex; align-items: center; justify-content: center; position: relative; border-bottom: 2px solid #000; }
-        .btn-cerrar-sesion { position: absolute; right: 10px; top: 15px; background: #333; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
-
-        /* RELOJES */
-        .barra-relojes {
-            background: var(--bg-header); padding: 10px; display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        .reloj-box {
-            background: var(--color-rojo-neon); color: #fff; padding: 5px 12px; border-radius: 6px;
-            font-family: 'Orbitron', sans-serif; text-align: center; border: 2px solid #fff; margin-left: 5px;
-        }
-        .reloj-dato { font-size: 20px; font-weight: 900; }
-
-        /* ZONA TRABAJO */
-        .zona-trabajo { max-width: 600px; margin: 0 auto; padding: 10px; padding-bottom: 80px; }
-
-        /* BUSCADOR */
-        .buscador-wrap { position: relative; margin-top: 15px; }
-        .input-gigante {
-            width: 100%; padding: 15px; font-size: 20px; border: 2px solid #333; border-radius: 10px;
-            text-transform: uppercase; box-sizing: border-box;
-        }
-        .sugerencias-lista {
-            position: absolute; top: 100%; left: 0; width: 100%; background: white; border: 1px solid #ccc;
-            z-index: 50; max-height: 250px; overflow-y: auto; box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        }
-        .item-sugerencia { padding: 15px; border-bottom: 1px solid #eee; font-size: 18px; cursor: pointer; }
-        .item-sugerencia:hover { background: #f0f0f0; }
-
-        /* FICHA CLIENTE */
-        .ficha-cliente {
-            background: #fff; padding: 15px; border-radius: 10px; margin-top: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 5px solid var(--bg-header);
-        }
-        .deuda-box {
-            background: var(--color-rojo-neon); color: white; padding: 10px; border-radius: 8px;
-            text-align: center; font-size: 24px; font-weight: 900; width: 100%; box-sizing: border-box;
-        }
-        .deuda-ok { background: var(--color-verde-neon); color: #000; }
-
-        /* INPUTS MONTO */
-        .input-monto {
-            width: 100%; padding: 15px; font-size: 28px; font-weight: bold; text-align: center;
-            border: 2px solid #aaa; border-radius: 10px; margin-top: 10px; box-sizing: border-box;
-        }
-        
-        /* GRID PAGOS */
-        .grid-pagos { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px; }
-        .btn-metodo {
-            padding: 15px; border: 2px solid #ccc; background: #fff; border-radius: 8px;
-            font-weight: bold; cursor: pointer; font-size: 12px;
-        }
-        .btn-metodo.activo { background: #263238; color: #fff; border-color: #000; }
-        
-        .panel-transferencia {
-            background: #e3f2fd; padding: 15px; border: 2px solid #2196f3; border-radius: 10px;
-            margin-top: 10px; text-align: center;
-        }
-        .info-receptor { font-size: 12px; margin-top: 5px; display: block; color: #666; }
-
-        /* ACORDEONES */
-        .acordeon-btn {
-            width: 100%; padding: 15px; background: #37474f; color: white; text-align: left;
-            border: none; border-bottom: 1px solid #555; font-size: 16px; font-weight: bold; cursor: pointer;
-            margin-top: 10px; display: flex; justify-content: space-between;
-        }
-        .acordeon-panel {
-            background: #fff; padding: 10px; display: none; border: 1px solid #ccc; border-top: none;
-        }
-
-        /* BOTONES GRANDES */
-        .btn-accion {
-            width: 100%; padding: 20px; font-size: 20px; font-weight: bold; border: none; border-radius: 10px;
-            cursor: pointer; margin-top: 20px; text-transform: uppercase; box-shadow: 0 4px 0 rgba(0,0,0,0.2);
-        }
-        .btn-guardar { background: #00e676; color: #000; }
-        .btn-guardar:disabled { background: #ccc; cursor: not-allowed; color: #666; }
-        
-        /* FILAS DATOS */
-        .fila-normal {
-            background: #fff; padding: 10px; margin-bottom: 5px; border-bottom: 1px solid #eee;
+        #headerApp {
+            background: var(--header); color: white; padding: 15px; 
             display: flex; justify-content: space-between; align-items: center;
         }
+        .firma-soporte { font-size: 10px; opacity: 0.7; text-align: right; }
+
+        /* ZONA TRABAJO */
+        .contenedor { max-width: 600px; margin: 0 auto; padding: 10px; }
+
+        /* CLIENTES & VENTA */
+        .buscador { width: 100%; padding: 15px; font-size: 20px; border: 2px solid #000; box-sizing: border-box; text-transform: uppercase; }
+        
+        .sugerencias {
+            background: white; border: 1px solid #ccc; max-height: 200px; overflow-y: auto;
+        }
+        .item-sug { padding: 15px; border-bottom: 1px solid #eee; font-size: 18px; }
+
+        .ficha-cliente { background: white; padding: 15px; margin-top: 10px; border-radius: 8px; border-left: 5px solid #333; }
+        .deuda-display { 
+            background: var(--rojo); color: white; text-align: center; 
+            padding: 10px; font-size: 24px; font-weight: bold; margin: 10px 0; border-radius: 5px;
+        }
+        .sin-deuda { background: var(--verde); }
+
+        .input-monto {
+            width: 100%; padding: 15px; font-size: 24px; text-align: center; font-weight: bold;
+            border: 2px solid #aaa; margin-top: 10px; box-sizing: border-box; border-radius: 5px;
+        }
+
+        /* BOTONES PAGO */
+        .grid-pagos { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px; }
+        .btn-pago { padding: 15px; border: 1px solid #ccc; background: #fff; font-weight: bold; font-size: 12px; cursor: pointer; }
+        .btn-pago.activo { background: #333; color: white; border-color: black; }
+
+        /* SEMÁFORO PROVEEDOR */
+        .panel-proveedor { margin-top: 10px; padding: 10px; border: 2px solid #ccc; text-align: center; border-radius: 5px; }
+        .semaforo-box { 
+            width: 100%; padding: 10px; color: white; font-weight: bold; margin-top: 5px; 
+            border-radius: 5px; transition: 0.3s;
+        }
+        /* Colores dinámicos por JS */
+        
+        .animacion-flash { animation: flash 0.2s 6; }
+        @keyframes flash { 0% {opacity: 1;} 50% {opacity: 0.2;} 100% {opacity: 1;} }
+
+        /* LISTAS Y FILAS NEGRAS */
+        .fila { padding: 10px; border-bottom: 1px solid #ddd; background: white; display: flex; justify-content: space-between; align-items: center; }
+        
+        .fila-negra { 
+            background: var(--negro-borrado) !important; color: white !important; 
+            text-decoration: line-through; border-bottom: 1px solid #444; 
+        }
+        .fila-negra span { color: white; }
+
+        /* BOTONERA */
+        .btn-guardar { width: 100%; padding: 20px; background: var(--verde); border: none; font-size: 20px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        .btn-guardar:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* ACORDEONES */
+        .acordeon { width: 100%; padding: 15px; text-align: left; background: #455a64; color: white; border: none; margin-top: 10px; font-weight: bold; cursor: pointer; }
+        .panel { display: none; background: white; padding: 10px; border: 1px solid #ccc; }
 
     </style>
 </head>
 <body>
 
     <div id="pantallaLogin">
-        <div class="login-card">
-            <h2 style="margin-top:0;">🔐 ACCESO SEGURO</h2>
-            <div style="font-size:12px; color:#666; margin-bottom:10px;">Identifícate para continuar</div>
-            <input type="text" id="loginId" class="input-login" placeholder="USUARIO" onkeyup="this.value=this.value.toUpperCase()">
-            <input type="password" id="loginPass" class="input-login" placeholder="CLAVE">
-            <button class="btn-login" onclick="iniciarSesion()">ENTRAR AL SISTEMA</button>
-            <p id="msgError" style="color:red; display:none; margin-top:10px;">⛔ Credenciales Incorrectas</p>
+        <div class="login-box">
+            <h2>ACCESO SISTEMA</h2>
+            <input type="text" id="logUser" class="input-login" placeholder="USUARIO">
+            <input type="password" id="logPass" class="input-login" placeholder="CLAVE">
+            <button class="btn-entrar" onclick="login()">ENTRAR</button>
+            <p id="errorLogin" style="color:red; display:none;">Datos Incorrectos</p>
         </div>
-        <div style="color:white; margin-top:20px; font-size:10px;">Software Ver. 2.0</div>
+        <div style="margin-top:50px; font-size:10px; color:#aaa;">
+            💻 Proveedor del Software: <strong>Moisés Gimeno</strong>
+        </div>
     </div>
 
-    <div id="sistemaApp" class="oculto">
+    <div id="modalBackup" class="oculto">
+        <h1>⚠️ ALERTA DE SEGURIDAD</h1>
+        <p>REGLA OBLIGATORIA DEL PROVEEDOR:</p>
+        <p>Debe descargar la copia de seguridad encriptada ahora mismo.</p>
+        <button class="btn-backup" onclick="descargarBackup()">💾 DESCARGAR AL PENDRIVE</button>
+    </div>
+
+    <div id="app" class="oculto">
         
-        <div id="headerCliente">
-            <h1 style="margin:0; font-size:20px;">SISTEMA GESTIÓN</h1>
-            <button class="btn-cerrar-sesion" onclick="location.reload()">SALIR</button>
+        <div id="headerApp">
+            <div>
+                <strong id="lblUsuario">...</strong>
+            </div>
+            <div class="firma-soporte">
+                Soporte: Moisés Gimeno<br>
+                +54 9 XX XXXX XXXX
+            </div>
+            <button onclick="location.reload()" style="background:red; color:white; border:none; margin-left:10px;">Salir</button>
         </div>
 
-        <div class="barra-relojes">
-            <div style="color:white; font-weight:bold; font-size:14px;" id="usuarioDisplay">...</div>
-            <div style="display:flex;">
-                <div class="reloj-box">
-                    <div class="reloj-dato" id="relojHora">--:--</div>
-                </div>
-                <div class="reloj-box">
-                    <div class="reloj-dato" id="relojFecha">--/--</div>
-                </div>
-            </div>
-        </div>
+        <div class="contenedor">
+            
+            <input type="text" id="inputBuscar" class="buscador" placeholder="BUSCAR CLIENTE..." onkeyup="buscar(this.value)">
+            <div id="sugerencias" class="sugerencias oculto"></div>
 
-        <div class="zona-trabajo">
+            <div id="ficha" class="ficha-cliente oculto">
+                <h2 id="cliNombre" style="margin:0;">CLIENTE</h2>
+                <div id="boxDeuda" class="deuda-display">$ 0</div>
+                <button onclick="generarPDF()" style="background:#333; color:white; border:none; padding:5px; width:100%;">🖨️ IMPRIMIR ESTADO DE CUENTA</button>
 
-            <div class="buscador-wrap">
-                <input type="text" id="inputBuscar" class="input-gigante" placeholder="BUSCAR CLIENTE..." onkeyup="buscarClientes(this.value)">
-                <div id="sugerencias" class="sugerencias-lista oculto"></div>
-            </div>
-
-            <div id="fichaCliente" class="ficha-cliente oculto">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h2 style="margin:0;" id="cliNombre">NOMBRE</h2>
-                    <button onclick="editarTelefono()" style="background:#eee; border:none; border-radius:5px; cursor:pointer;">✏️</button>
-                </div>
-                <div style="color:#666; margin-bottom:5px;" id="cliTel">Tel: ---</div>
-                
-                <div id="boxDeuda" class="deuda-box">$ 0</div>
-                
-                <div style="margin-top:20px; border-top:2px dashed #ccc; padding-top:10px;">
-                    <label style="font-weight:bold;">MONTO VENTA:</label>
-                    <input type="tel" id="inputMontoVenta" class="input-monto" placeholder="$ 0" onkeyup="formatoMoneda(this); validarGuardado()">
+                <div style="margin-top:20px;">
+                    <label>MONTO VENTA:</label>
+                    <input type="tel" id="inputVenta" class="input-monto" placeholder="$ 0" onkeyup="formato(this); validar()">
                     
-                    <label style="font-weight:bold; display:block; margin-top:10px;">PAGO (Lo que entrega):</label>
-                    <input type="tel" id="inputMontoPago" class="input-monto" placeholder="$ 0" onkeyup="formatoMoneda(this); checkPagoObligatorio()">
+                    <label style="display:block; margin-top:10px;">PAGO:</label>
+                    <input type="tel" id="inputPago" class="input-monto" placeholder="$ 0" onkeyup="formato(this); checkPago()">
                 </div>
 
-                <div id="zonaMetodos" class="oculto">
+                <div id="zonaPagos" class="oculto">
                     <div class="grid-pagos">
-                        <button class="btn-metodo" onclick="setMetodo('EFECTIVO', this)">💵 CAJA (Efvo)</button>
-                        <button class="btn-metodo" onclick="setMetodo('TARJETA', this)">💳 TARJETA</button>
-                        <button class="btn-metodo" onclick="setMetodo('TRANSFERENCIA', this)">🏦 PROVEEDOR</button>
+                        <button class="btn-pago" onclick="setMetodo('EFECTIVO', this)">💵 CAJA</button>
+                        <button class="btn-pago" onclick="setMetodo('TARJETA', this)">💳 TARJETA</button>
+                        <button class="btn-pago" onclick="setMetodo('TRANSFERENCIA', this)">🏦 PROVEEDOR</button>
                     </div>
 
-                    <div id="panelTransf" class="panel-transferencia oculto">
-                        <strong>DESTINO DEL PAGO (PROVEEDOR):</strong><br>
-                        <small>Elige qué deuda externa estás pagando con esta transferencia:</small>
-                        <select id="selectReceptor" style="width:100%; padding:10px; margin-top:5px; font-size:16px;" onchange="validarGuardado()">
+                    <div id="panelProv" class="panel-proveedor oculto">
+                        <strong>DESTINO PAGO:</strong>
+                        <select id="selProv" style="width:100%; padding:10px; margin-top:5px;" onchange="verSemaforo()">
                         </select>
-                        <span id="infoReceptorSaldo" class="info-receptor"></span>
+                        <div id="semaforo" class="semaforo-box" style="background:#ccc;" 
+                             onmousedown="verMontoHoy(true)" onmouseup="verMontoHoy(false)"
+                             ontouchstart="verMontoHoy(true)" ontouchend="verMontoHoy(false)">
+                            SELECCIONAR PROVEEDOR
+                        </div>
                     </div>
                 </div>
 
-                <button id="btnGuardar" class="btn-accion btn-guardar" onclick="guardarOperacion()" disabled>GUARDAR OPERACIÓN</button>
+                <button id="btnGuardar" class="btn-guardar" onclick="guardar()" disabled>GUARDAR OPERACIÓN</button>
             </div>
 
-            <button class="acordeon-btn" onclick="toggleBloque('bloqueCaja')">💰 CAJA Y MOVIMIENTOS <span>▼</span></button>
-            <div id="bloqueCaja" class="acordeon-panel">
-                <button onclick="cargarCaja()" style="width:100%; padding:10px; margin-bottom:10px;">🔄 ACTUALIZAR CAJA</button>
+            <button class="acordeon" onmouseover="verHistorialCorto(true)" onmouseout="verHistorialCorto(false)">
+                💰 CAJA Y MOVIMIENTOS
+            </button>
+            <div id="panelCaja" class="panel" style="display:block;">
+                <button onclick="cargarCaja()" style="width:100%; padding:5px;">🔄 Actualizar</button>
                 
-                <div id="vistaCajaDueno">
-                    <h3 style="border-bottom:2px solid #000;">RADIOGRAFÍA DEL DÍA</h3>
-                    <div class="fila-normal"><strong>VENTA TOTAL (Facturado):</strong> <span id="lblTotalVenta">$ 0</span></div>
-                    <hr>
-                    <div class="fila-normal" style="background:#e8f5e9;"><strong>EFECTIVO (En Cajón):</strong> <span id="lblTotalEfvo" style="font-size:18px; font-weight:bold;">$ 0</span></div>
-                    <div class="fila-normal">Tarjeta: <span id="lblTotalTarjeta">$ 0</span></div>
-                    <div class="fila-normal">Transferencia (A Proveedores): <span id="lblTotalTransf">$ 0</span></div>
-                    <div class="fila-normal" style="background:#ffebee;"><strong>GASTOS SALIDA:</strong> <span id="lblTotalGastos" style="color:red;">$ 0</span></div>
+                <div id="radiografiaDueno" class="oculto" style="border: 2px solid red; padding:5px; margin:5px 0;">
+                    <h3 style="margin:0; text-align:center;">RADIOGRAFÍA (SOLO DUEÑO)</h3>
+                    <div class="fila"><strong>VENTA TOTAL:</strong> <span id="lblVenta">$0</span></div>
+                    <div class="fila"><strong>EFECTIVO:</strong> <span id="lblEfvo">$0</span></div>
+                    <div class="fila"><strong>TARJETA:</strong> <span id="lblTarjeta">$0</span></div>
+                    <div class="fila"><strong>PROVEEDORES:</strong> <span id="lblTransf">$0</span></div>
+                    <div class="fila" style="color:red"><strong>GASTOS:</strong> <span id="lblGastos">$0</span></div>
                 </div>
-                
-                <h4 style="margin-top:20px;">Últimos Movimientos:</h4>
-                <div id="listaMovimientos" style="font-size:12px;"></div>
-            </div>
 
-            <button class="acordeon-btn" onclick="toggleBloque('bloqueGastos')">📉 REGISTRAR GASTO <span>▼</span></button>
-            <div id="bloqueGastos" class="acordeon-panel">
-                <label>Concepto (Ej: Pan, Luz, Limpieza):</label>
-                <input type="text" id="inputGastoConcepto" class="input-gigante" placeholder="DETALLE...">
-                <input type="tel" id="inputMontoGasto" class="input-monto" placeholder="$ 0" onkeyup="formatoMoneda(this)">
+                <div id="listaMovimientos" style="font-size:12px; margin-top:10px;"></div>
                 
-                <div style="display:flex; gap:10px; margin-top:15px;">
-                    <button class="btn-accion" style="background:#ccc; font-size:16px;" onclick="guardarGasto('EFECTIVO')">PAGAR DE CAJA</button>
+                <div style="margin-top:20px; background:#eee; padding:10px; text-align:center;">
+                    <h4>CIERRE DE TURNO</h4>
+                    <input type="tel" class="input-monto" placeholder="EFECTIVO REAL EN CAJA" style="font-size:18px;">
+                    <button style="background:black; color:white; border:none; padding:10px; margin-top:5px;">CERRAR CAJA</button>
                 </div>
             </div>
 
-            <button class="acordeon-btn" style="background:#d32f2f;" onclick="toggleBloque('bloqueDeudores')">💀 MAYORES DEUDORES <span>▼</span></button>
-            <div id="bloqueDeudores" class="acordeon-panel">
-                <button onclick="cargarDeudores()" style="width:100%;">🔄 ACTUALIZAR LISTA</button>
-                <div id="listaDeudores"></div>
-            </div>
+            <div id="modulosDueno" class="oculto">
+                <button class="acordeon">👥 GESTIÓN CLIENTES (FULL)</button>
+                <div class="panel">Aquí lista completa...</div>
 
-            <button class="acordeon-btn" id="btnReceptores" style="background:#fbc02d; color:black;" onclick="toggleBloque('bloqueReceptores')">🏦 GESTIÓN DEUDAS EXTERNAS <span>▼</span></button>
-            <div id="bloqueReceptores" class="acordeon-panel">
-                <h3>Agregar Deuda con Tercero</h3>
-                <input type="text" id="recNombre" placeholder="Nombre Proveedor" class="input-login">
-                <input type="text" id="recAlias" placeholder="Alias/CBU" class="input-login">
-                <input type="tel" id="recMonto" placeholder="Monto Deuda Total ($)" class="input-login" onkeyup="formatoMoneda(this)">
-                <button onclick="nuevoReceptor()" class="btn-accion" style="font-size:14px; padding:10px;">➕ GUARDAR DEUDA</button>
-                
-                <hr>
-                <h4>Estado de Cuentas:</h4>
-                <div id="listaReceptoresAdmin"></div>
+                <button class="acordeon" onclick="cargarProvAdmin()">🏦 GESTIÓN PROVEEDORES</button>
+                <div class="panel">
+                    <input id="newProv" placeholder="NUEVO PROVEEDOR" class="input-login">
+                    <button onclick="crearProv()">AGREGAR</button>
+                    <div id="listaProvAdmin"></div>
+                </div>
             </div>
 
         </div>
-    </div>
-
-    <div class="footer-marca">
-        💻 Software Desarrollado por <strong>Moisés Gimeno</strong> | 📞 Soporte Técnico: <span>+54 9 XX XXXX XXXX</span>
     </div>
 
 <script>
-    // ==========================================
-    // 🧠 LÓGICA CONECTADA AL SERVIDOR
-    // ==========================================
-
-    let USUARIO_ACTUAL = null;
-    let CLIENTE_SEL = null;
-    let METODO_PAGO = "";
-    let RECEPTORES_CACHE = [];
+    // --- VARIABLES GLOBALES ---
+    let ROL = ''; // EMPLEADO, DUENO, DEV
+    let USUARIO_NOMBRE = '';
+    let CLIENTE_ACTUAL = null;
+    let METODO = '';
+    let LISTA_PROV = [];
+    let DEUDA_PROV_SEL = 0; // Para semáforo
 
     // --- 1. LOGIN ---
-    async function iniciarSesion() {
-        const id = document.getElementById('loginId').value;
-        const pass = document.getElementById('loginPass').value;
-
+    async function login() {
+        const u = document.getElementById('logUser').value;
+        const c = document.getElementById('logPass').value;
+        
         try {
             const res = await fetch('/api/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, pass })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ usuario: u, clave: c })
             });
             const data = await res.json();
 
             if (data.ok) {
-                USUARIO_ACTUAL = data.usuario;
-                entrarSistema();
+                ROL = data.rol;
+                USUARIO_NOMBRE = data.nombre;
+                iniciarSistema();
             } else {
-                document.getElementById('msgError').style.display = 'block';
+                document.getElementById('errorLogin').style.display = 'block';
             }
-        } catch (e) {
-            alert("❌ Error de conexión con el servidor");
-        }
+        } catch(e) { alert("Error conexión"); }
     }
 
-    function entrarSistema() {
+    function iniciarSistema() {
         document.getElementById('pantallaLogin').style.display = 'none';
-        document.getElementById('sistemaApp').classList.remove('oculto');
-        document.getElementById('usuarioDisplay').innerText = "👤 " + USUARIO_ACTUAL.nombre;
         
-        // Permisos
-        if(USUARIO_ACTUAL.tipo === 'EMPLEADO') {
-            document.getElementById('btnReceptores').style.display = 'none'; // Ocultar gestión receptores
+        // REGLA BACKUP OBLIGATORIO
+        if (ROL === 'DUENO' || ROL === 'DEV') {
+            document.getElementById('modalBackup').classList.remove('oculto');
+        } else {
+            document.getElementById('app').classList.remove('oculto');
         }
         
-        actualizarReloj();
-        cargarReceptores(); // Precargar lista para el select
+        document.getElementById('lblUsuario').innerText = USUARIO_NOMBRE;
+        configurarPermisos();
+        cargarCaja(); // Cargar datos iniciales
     }
 
-    // --- 2. CLIENTES ---
-    async function buscarClientes(query) {
-        if (query.length < 1) {
-            document.getElementById('sugerencias').classList.add('oculto');
-            return;
+    function descargarBackup() {
+        window.open('/api/backup/download');
+        // Esperamos un poco y dejamos entrar
+        setTimeout(() => {
+            document.getElementById('modalBackup').classList.add('oculto');
+            document.getElementById('app').classList.remove('oculto');
+        }, 2000);
+    }
+
+    function configurarPermisos() {
+        if (ROL === 'DUENO' || ROL === 'DEV') {
+            document.getElementById('radiografiaDueno').classList.remove('oculto');
+            document.getElementById('modulosDueno').classList.remove('oculto');
+        } else {
+            // Empleado: Caja Ciega
+            document.getElementById('radiografiaDueno').classList.add('oculto');
+            document.getElementById('modulosDueno').classList.add('oculto');
         }
-        
-        const res = await fetch(`/api/sugerencias/${query}`);
-        const clientes = await res.json();
+        cargarProveedores();
+    }
+
+    // --- 2. OPERATIVA VENTA ---
+    async function buscar(q) {
+        if(q.length < 1) return document.getElementById('sugerencias').classList.add('oculto');
+        const res = await fetch(`/api/sugerencias/${q}`);
+        const data = await res.json();
         const div = document.getElementById('sugerencias');
-        div.innerHTML = '';
-
-        // Botón Nuevo
-        let html = `<div class="item-sugerencia" style="color:blue" onclick="crearCliente('${query}')">➕ NUEVO: "${query}"</div>`;
-        
-        clientes.forEach(c => {
-            html += `<div class="item-sugerencia" onclick='seleccionarCliente(${JSON.stringify(c)})'>${c.nombre} (${c.telefono})</div>`;
+        div.innerHTML = `<div class="item-sug" style="color:blue" onclick="crearCli('${q}')">➕ NUEVO: ${q}</div>`;
+        data.forEach(c => {
+            div.innerHTML += `<div class="item-sug" onclick='selCli(${JSON.stringify(c)})'>${c.nombre}</div>`;
         });
-
-        div.innerHTML = html;
         div.classList.remove('oculto');
     }
 
-    async function crearCliente(nombre) {
+    async function crearCli(n) {
         const res = await fetch('/api/clientes/crear', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ nombre })
+            method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({nombre:n})
         });
-        const nuevo = await res.json();
-        seleccionarCliente(nuevo);
+        selCli(await res.json());
     }
 
-    function seleccionarCliente(cliente) {
-        CLIENTE_SEL = cliente;
+    function selCli(c) {
+        CLIENTE_ACTUAL = c;
         document.getElementById('sugerencias').classList.add('oculto');
         document.getElementById('inputBuscar').value = '';
-        
-        document.getElementById('fichaCliente').classList.remove('oculto');
-        document.getElementById('cliNombre').innerText = cliente.nombre;
-        document.getElementById('cliTel').innerText = cliente.telefono || "Sin Teléfono";
+        document.getElementById('ficha').classList.remove('oculto');
+        document.getElementById('cliNombre').innerText = c.nombre;
         
         const box = document.getElementById('boxDeuda');
-        box.innerText = "$ " + numberFormat(cliente.deuda);
-        box.className = cliente.deuda > 0 ? 'deuda-box' : 'deuda-box deuda-ok';
-
-        // Reset
-        document.getElementById('inputMontoVenta').value = '';
-        document.getElementById('inputMontoPago').value = '';
-        document.getElementById('zonaMetodos').classList.add('oculto');
-        document.getElementById('btnGuardar').disabled = true;
+        box.innerText = "$ " + numberFormat(c.deuda);
+        box.className = c.deuda > 0 ? 'deuda-display' : 'deuda-display sin-deuda';
+        
+        // Reset Inputs
+        document.getElementById('inputVenta').value = '';
+        document.getElementById('inputPago').value = '';
+        document.getElementById('zonaPagos').classList.add('oculto');
     }
 
-    async function editarTelefono() {
-        const nuevo = prompt("Nuevo Teléfono:", CLIENTE_SEL.telefono);
-        if (nuevo !== null) {
-            await fetch('/api/clientes/update-tel', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ id: CLIENTE_SEL._id, telefono: nuevo })
-            });
-            CLIENTE_SEL.telefono = nuevo;
-            document.getElementById('cliTel').innerText = nuevo;
-        }
+    function checkPago() {
+        const p = clean(document.getElementById('inputPago').value);
+        if(p > 0) document.getElementById('zonaPagos').classList.remove('oculto');
+        else document.getElementById('zonaPagos').classList.add('oculto');
+        validar();
     }
 
-    // --- 3. OPERACIONES ---
-    function checkPagoObligatorio() {
-        const pago = cleanNumber(document.getElementById('inputMontoPago').value);
-        if (pago > 0) {
-            document.getElementById('zonaMetodos').classList.remove('oculto');
-            document.getElementById('btnGuardar').disabled = true; // Esperar método
-        } else {
-            document.getElementById('zonaMetodos').classList.add('oculto');
-            validarGuardado();
-        }
-    }
-
-    function setMetodo(metodo, btn) {
-        METODO_PAGO = metodo;
-        document.querySelectorAll('.btn-metodo').forEach(b => b.classList.remove('activo'));
+    function setMetodo(m, btn) {
+        METODO = m;
+        document.querySelectorAll('.btn-pago').forEach(b => b.classList.remove('activo'));
         btn.classList.add('activo');
-
-        const panel = document.getElementById('panelTransf');
-        if (metodo === 'TRANSFERENCIA') {
-            panel.classList.remove('oculto');
-            panel.classList.add('animacion-flash');
-            setTimeout(() => panel.classList.remove('animacion-flash'), 1000);
+        
+        const pProv = document.getElementById('panelProv');
+        if (m === 'TRANSFERENCIA') {
+            pProv.classList.remove('oculto');
+            pProv.classList.add('animacion-flash'); // FLASH VISUAL
         } else {
-            panel.classList.add('oculto');
+            pProv.classList.add('oculto');
         }
-        validarGuardado();
+        validar();
     }
 
-    function validarGuardado() {
-        // Esta es la función que faltaba antes
-        const venta = cleanNumber(document.getElementById('inputMontoVenta').value);
-        const pago = cleanNumber(document.getElementById('inputMontoPago').value);
+    async function cargarProveedores() {
+        const res = await fetch('/api/receptores');
+        LISTA_PROV = await res.json();
+        const sel = document.getElementById('selProv');
+        sel.innerHTML = '<option value="">-- ELEGIR --</option>';
+        LISTA_PROV.forEach(p => {
+            sel.innerHTML += `<option value="${p._id}">${p.nombre}</option>`;
+        });
+    }
+
+    function verSemaforo() {
+        const id = document.getElementById('selProv').value;
+        const box = document.getElementById('semaforo');
+        const p = LISTA_PROV.find(x => x._id === id);
+        
+        if (!p) {
+            box.style.background = '#ccc';
+            box.innerText = 'SELECCIONAR';
+            return;
+        }
+
+        // Lógica Semáforo (Deuda vs Tope)
+        // Verde: Le debemos poco. Rojo: Le debemos mucho (Cerca del tope)
+        const ratio = p.saldoPorPagar / p.topeMaximo; 
+        
+        if (ratio > 0.9) { box.style.background = 'red'; box.innerText = '🔴 LLENO (DEUDA ALTA)'; }
+        else if (ratio > 0.5) { box.style.background = '#ffd600'; box.style.color='black'; box.innerText = '🟡 DISPONIBLE'; }
+        else { box.style.background = '#00c853'; box.innerText = '🟢 LIBRE'; }
+        
+        validar();
+    }
+
+    function verMontoHoy(activo) {
+        // OJO ESPÍA
+        const box = document.getElementById('semaforo');
+        if (activo) {
+            // Aquí deberíamos filtrar cuánto pagamos hoy a este prov. Simplificado:
+            box.innerText = "👁️ PAGO HOY: (Consultando...)"; // Simulación
+        } else {
+            verSemaforo(); // Restaurar texto normal
+        }
+    }
+
+    function validar() {
+        const v = clean(document.getElementById('inputVenta').value);
+        const p = clean(document.getElementById('inputPago').value);
         const btn = document.getElementById('btnGuardar');
-
-        // Lógica básica:
-        // 1. Debe haber monto de venta O monto de pago (para pagar deuda vieja)
-        if (venta <= 0 && pago <= 0) { btn.disabled = true; return; }
-
-        // 2. Si hay pago, debe haber método
-        if (pago > 0) {
-            if (!METODO_PAGO) { btn.disabled = true; return; }
-            if (METODO_PAGO === 'TRANSFERENCIA') {
-                // Si es transf, debe haber receptor seleccionado
-                const recId = document.getElementById('selectReceptor').value;
-                if (!recId) { btn.disabled = true; return; }
-            }
+        
+        let ok = false;
+        if (p > 0 && METODO) {
+             if (METODO === 'TRANSFERENCIA') {
+                 if (document.getElementById('selProv').value) ok = true;
+             } else {
+                 ok = true;
+             }
+        } else if (v > 0 && p === 0) {
+            ok = true; // Solo deuda
         }
-
-        btn.disabled = false;
+        btn.disabled = !ok;
     }
 
-    async function guardarOperacion() {
-        const venta = cleanNumber(document.getElementById('inputMontoVenta').value);
-        const pago = cleanNumber(document.getElementById('inputMontoPago').value);
-        const receptorId = (METODO_PAGO === 'TRANSFERENCIA') ? document.getElementById('selectReceptor').value : null;
-
-        const data = {
-            clienteId: CLIENTE_SEL._id,
-            compra: venta,
-            pago: pago,
-            metodo: pago > 0 ? METODO_PAGO : 'CUENTA_CORRIENTE',
-            receptorId: receptorId
-        };
+    async function guardar() {
+        const v = clean(document.getElementById('inputVenta').value);
+        const p = clean(document.getElementById('inputPago').value);
+        const pid = document.getElementById('selProv').value;
 
         const res = await fetch('/api/operaciones', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+                clienteId: CLIENTE_ACTUAL._id,
+                compra: v, pago: p, metodo: p > 0 ? METODO : 'CUENTA', receptorId: pid
+            })
         });
 
-        if (res.ok) {
-            alert("✅ GUARDADO");
-            document.getElementById('fichaCliente').classList.add('oculto');
-            document.getElementById('inputBuscar').value = '';
-            // Recargar datos fondo
-            cargarReceptores(); 
-        } else {
-            alert("Error al guardar");
-        }
-    }
-
-    // --- 4. CAJA Y DEUDAS ---
-    async function cargarCaja() {
-        const res = await fetch('/api/caja-hoy');
-        const data = await res.json();
-        
-        // Totales
-        const t = data.totales;
-        document.getElementById('lblTotalVenta').innerText = "$ " + numberFormat(t.ventaTotal);
-        document.getElementById('lblTotalEfvo').innerText = "$ " + numberFormat(t.efectivoMano);
-        document.getElementById('lblTotalTarjeta').innerText = "$ " + numberFormat(t.tarjeta);
-        document.getElementById('lblTotalTransf').innerText = "$ " + numberFormat(t.transf);
-        document.getElementById('lblTotalGastos').innerText = "$ " + numberFormat(t.gastos);
-
-        // Lista
-        let html = '';
-        data.movimientos.slice(0, 10).forEach(m => {
-            html += `<div class="fila-normal">
-                <span>${m.cliente} (${m.metodo})</span>
-                <b>$ ${numberFormat(m.pago || m.compra)}</b>
-            </div>`;
-        });
-        document.getElementById('listaMovimientos').innerHTML = html;
-    }
-
-    async function guardarGasto(metodo) {
-        const detalle = document.getElementById('inputGastoConcepto').value;
-        const monto = cleanNumber(document.getElementById('inputMontoGasto').value);
-        
-        if(!detalle || monto <= 0) return alert("Faltan datos");
-
-        const res = await fetch('/api/gastos', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ detalle, monto, metodo })
-        });
-        
         if(res.ok) {
-            alert("📉 Gasto registrado");
-            document.getElementById('inputGastoConcepto').value = '';
-            document.getElementById('inputMontoGasto').value = '';
+            alert("✅ GUARDADO");
+            document.getElementById('ficha').classList.add('oculto');
+            document.getElementById('inputBuscar').value = '';
             cargarCaja();
         }
     }
 
-    async function cargarDeudores() {
-        const res = await fetch('/api/deudores');
-        const lista = await res.json();
-        const div = document.getElementById('listaDeudores');
+    // --- 3. CAJA Y BORRADO (FILA NEGRA) ---
+    async function cargarCaja() {
+        const res = await fetch('/api/caja-hoy');
+        const data = await res.json();
+        
+        // Radiografía (Solo se ve si es ADMIN por CSS)
+        const t = data.totales;
+        document.getElementById('lblVenta').innerText = format(t.totalVenta);
+        document.getElementById('lblEfvo').innerText = format(t.efectivo);
+        document.getElementById('lblTarjeta').innerText = format(t.tarjeta);
+        document.getElementById('lblTransf').innerText = format(t.transf);
+        document.getElementById('lblGastos').innerText = format(t.gastos);
+
+        // Lista Movimientos
+        const div = document.getElementById('listaMovimientos');
         div.innerHTML = '';
         
-        lista.forEach(d => {
-            div.innerHTML += `<div class="fila-normal" style="border-left:4px solid red;">
-                <span>${d.nombre}</span>
-                <b>$ ${numberFormat(d.deuda)}</b>
-            </div>`;
-        });
-    }
+        // Si es EMPLEADO, cortamos a 10. Si es ADMIN, todos.
+        let movs = data.movimientos;
+        if (ROL === 'EMPLEADO') movs = movs.slice(0, 10);
 
-    // --- 5. RECEPTORES (Gestión Deudas Externas) ---
-    async function cargarReceptores() {
-        const res = await fetch('/api/receptores');
-        RECEPTORES_CACHE = await res.json();
-        
-        const sel = document.getElementById('selectReceptor');
-        const listaAdmin = document.getElementById('listaReceptoresAdmin');
-        sel.innerHTML = '<option value="">-- Seleccionar --</option>';
-        listaAdmin.innerHTML = '';
-
-        RECEPTORES_CACHE.forEach(r => {
-            // Select (Solo mostrar si hay deuda por pagar)
-            if (r.saldoPorPagar > 0) {
-                sel.innerHTML += `<option value="${r._id}">${r.nombre} (Debemos: $${numberFormat(r.saldoPorPagar)})</option>`;
+        movs.forEach(m => {
+            let estilo = "fila";
+            let btnBorrar = '';
+            
+            if (m.esBorrado) {
+                estilo = "fila fila-negra"; // FILA NEGRA
+            } else {
+                // Botón borrar disponible para todos (Crea la mancha negra)
+                btnBorrar = `<button onclick="borrarOp('${m._id}', '${m.metodo}')" style="background:red; color:white; border:none;">X</button>`;
             }
 
-            // Lista Admin
-            listaAdmin.innerHTML += `
-                <div class="fila-normal">
+            div.innerHTML += `
+                <div class="${estilo}">
                     <div>
-                        <strong>${r.nombre}</strong> <small>${r.alias}</small><br>
-                        <span style="color:red">Falta Pagar: $${numberFormat(r.saldoPorPagar)}</span>
-                        <br><small style="color:#666">Deuda Orig: $${numberFormat(r.deudaOriginal)}</small>
+                        ${m.esBorrado ? '⬛ ANULADO:' : ''} ${m.cliente} (${m.metodo})<br>
+                        <b>$ ${format(m.pago || m.compra)}</b>
+                        ${m.esBorrado ? `<br><small>Borrado por: ${m.usuarioBorrado}</small>` : ''}
                     </div>
-                    <button onclick="vaciarReceptor('${r._id}')" style="background:#222; color:#fff; border:none; border-radius:4px;">🆗 PAGADO</button>
+                    ${btnBorrar}
                 </div>
             `;
         });
     }
 
-    async function nuevoReceptor() {
-        const nombre = document.getElementById('recNombre').value;
-        const alias = document.getElementById('recAlias').value;
-        const monto = cleanNumber(document.getElementById('recMonto').value);
+    async function borrarOp(id, metodo) {
+        if (!confirm("¿ANULAR ESTA OPERACIÓN? Quedará registrada la anulación.")) return;
 
-        if(!nombre || monto <= 0) return alert("Faltan datos");
-
-        await fetch('/api/receptores', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ nombre, alias, montoDeuda: monto })
-        });
-        
-        alert("Proveedor Guardado");
-        document.getElementById('recNombre').value = '';
-        document.getElementById('recMonto').value = '';
-        cargarReceptores();
-    }
-
-    async function vaciarReceptor(id) {
-        if(confirm("¿Marcar toda la deuda con este proveedor como PAGADA manualmente?")) {
-            await fetch('/api/receptores/vaciar', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ id })
-            });
-            cargarReceptores();
+        // ALERTA ESPECÍFICA DE TRANSFERENCIA
+        if (metodo === 'TRANSFERENCIA') {
+            alert("⛔ ATENCIÓN: NO DEVOLVER EFECTIVO.\n\nEl dinero ya fue enviado al proveedor.\nContactar al Dueño para que él devuelva el dinero al cliente por transferencia.");
         }
+
+        await fetch('/api/operaciones/anular', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ idOperacion: id, usuario: USUARIO_NOMBRE })
+        });
+        cargarCaja();
     }
 
+    // --- 4. PDF (jsPDF) ---
+    function generarPDF() {
+        const doc = new jspdf.jsPDF();
+        const now = new Date();
+        
+        doc.setFontSize(18);
+        doc.text("ESTADO DE CUENTA - VERDULERÍA", 20, 20);
+        doc.setFontSize(12);
+        doc.text(`Cliente: ${CLIENTE_ACTUAL.nombre}`, 20, 30);
+        doc.text(`Fecha Impresión: ${now.toLocaleString()}`, 20, 40);
+        doc.text(`Deuda Total: $ ${format(CLIENTE_ACTUAL.deuda)}`, 20, 50);
+        
+        doc.text("------------------------------------------------", 20, 60);
+        doc.text("Detalle de movimientos disponible en sistema.", 20, 70);
+        doc.text("Soporte Proveedor: Moisés Gimeno", 20, 280);
+        
+        doc.save(`Estado_${CLIENTE_ACTUAL.nombre}.pdf`);
+    }
 
     // --- HELPERS ---
-    function actualizarReloj() {
-        const now = new Date();
-        document.getElementById('relojHora').innerText = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
-        document.getElementById('relojFecha').innerText = now.getDate().toString().padStart(2,'0') + "/" + (now.getMonth()+1).toString().padStart(2,'0');
-        setTimeout(actualizarReloj, 1000);
+    function formato(i) {
+        let v = i.value.replace(/\D/g,'');
+        if(v!=='') i.value = new Intl.NumberFormat('es-AR').format(v);
     }
-    function toggleBloque(id) {
-        const panel = document.getElementById(id);
-        panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
-    }
-    function formatoMoneda(input) {
-        let val = input.value.replace(/\D/g, '');
-        if(val === '') return;
-        input.value = new Intl.NumberFormat('es-AR').format(val);
-    }
-    function cleanNumber(val) {
-        return parseInt(val.replace(/\./g, '') || 0);
-    }
-    function numberFormat(val) {
-        return new Intl.NumberFormat('es-AR').format(val);
-    }
+    function clean(v) { return parseInt(v.replace(/\./g,'')||0); }
+    function format(v) { return new Intl.NumberFormat('es-AR').format(v); }
 
 </script>
 </body>
