@@ -3,30 +3,29 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// --- CONEXIÓN BASE DE DATOS (NUBE) ---
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/verduleria_saas_final';
+// --- CONEXIÓN BASE DE DATOS ---
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/verduleria_saas_v4';
 mongoose.connect(MONGO_URI)
-    .then(() => console.log("✅ Conectado a la Nube (MongoDB)"))
-    .catch(err => console.error("❌ Error Base de Datos:", err));
+    .then(() => console.log("✅ Servidor Conectado a la Nube"))
+    .catch(err => console.error("❌ Error BD:", err));
 
-// --- MODELOS DE DATOS ---
+// --- MODELOS ---
 const Cliente = mongoose.model('Cliente', new mongoose.Schema({ 
     nombre: { type: String, uppercase: true }, 
-    telefono: { type: String, default: "" }, 
+    telefono: { type: String, default: "" }, // AHORA OBLIGATORIO Y EDITABLE
     deuda: { type: Number, default: 0 } 
 }));
 
 const Receptor = mongoose.model('Receptor', new mongoose.Schema({ 
     nombre: { type: String, uppercase: true, unique: true }, 
-    alias: { type: String, default: "" },
-    saldoPorPagar: { type: Number, default: 0 }, // Deuda que tenemos con él
-    topeMaximo: { type: Number, default: 1000000 } // Tope para el semáforo
+    alias: { type: String, uppercase: true, default: "CUENTA" }, // NUEVO: ALIAS
+    saldoPorPagar: { type: Number, default: 0 }, 
+    topeMaximo: { type: Number, default: 1000000 }
 }));
 
 const Operacion = mongoose.model('Operacion', new mongoose.Schema({ 
@@ -34,44 +33,40 @@ const Operacion = mongoose.model('Operacion', new mongoose.Schema({
     compra: Number, 
     pago: Number, 
     metodo: String, 
-    destino: { type: String, uppercase: true }, 
+    destino: { type: String, uppercase: true }, // Nombre Receptor
     fecha: { type: Date, default: Date.now },
     esGasto: { type: Boolean, default: false },
-    detalleGasto: String,
-    // Auditoría de Borrado (Fila Negra)
+    detalleGasto: { type: String, uppercase: true }, // "BOLSAS", "LIMPIEZA"
     esBorrado: { type: Boolean, default: false },
     fechaBorrado: Date,
-    usuarioBorrado: String
+    usuarioBorrado: String,
+    esCierre: { type: Boolean, default: false }, // Para marcar cierres de caja
+    montoCierre: Number
 }));
 
-// --- SISTEMA DE 3 LLAVES (LOGIN UNIFICADO) ---
+// --- LOGIN 3 LLAVES ---
 app.post('/api/login', (req, res) => {
     const { usuario, clave } = req.body;
-    const u = usuario.toUpperCase();
+    const u = usuario.toUpperCase().trim();
+    
+    // 1. EMPLEADO (Caja Ciega)
+    if (u === 'LOCAL' && clave === '1234') return res.json({ ok: true, rol: 'EMPLEADO', nombre: 'VENDEDOR' });
+    // 2. DUEÑO (Full Access)
+    if (u === 'ADMIN' && clave === 'DUENO2026') return res.json({ ok: true, rol: 'DUENO', nombre: 'ADMINISTRADOR' });
+    // 3. PROVEEDOR (Dev/Backup)
+    if (u === 'MOISES' && clave === 'MASTERKEY') return res.json({ ok: true, rol: 'DEV', nombre: 'SOPORTE TÉCNICO' });
 
-    // 1. NIVEL VENDEDOR (Caja Ciega)
-    if (u === 'LOCAL' && clave === '1234') {
-        return res.json({ ok: true, rol: 'EMPLEADO', nombre: 'VENDEDOR' });
-    }
-    // 2. NIVEL DUEÑO (Control Total)
-    if (u === 'ADMIN' && clave === 'DUENO2026') { // Cambiar por la clave real de Félix
-        return res.json({ ok: true, rol: 'DUENO', nombre: 'ADMINISTRADOR' });
-    }
-    // 3. NIVEL PROVEEDOR (Tú - Backup y Auditoría)
-    if (u === 'MOISES' && clave === 'MASTERKEY') { // Tu clave secreta
-        return res.json({ ok: true, rol: 'DEV', nombre: 'SOPORTE TÉCNICO' });
-    }
-
-    res.status(401).json({ ok: false, msg: 'Acceso Denegado' });
+    res.status(401).json({ ok: false });
 });
 
 // --- RUTAS API ---
 
-// Clientes
+// 1. CLIENTES (Búsqueda Híbrida: Nombre o Teléfono)
 app.get('/api/sugerencias/:query', async (req, res) => {
     const q = req.params.query;
     if(!q) return res.json([]);
     const regex = new RegExp(q, 'i');
+    // Busca por nombre O por teléfono
     const clientes = await Cliente.find({ $or: [{nombre: regex}, {telefono: regex}] }).limit(10).sort({nombre:1});
     res.json(clientes);
 });
@@ -79,30 +74,45 @@ app.get('/api/sugerencias/:query', async (req, res) => {
 app.post('/api/clientes/crear', async (req, res) => {
     const { nombre } = req.body;
     let c = await Cliente.findOne({ nombre: nombre.toUpperCase() });
-    if (!c) c = await Cliente.create({ nombre: nombre.toUpperCase() });
+    if (!c) c = await Cliente.create({ nombre: nombre.toUpperCase(), telefono: "" });
     res.json(c);
 });
 
-// Operaciones (Venta y Cobro Inteligente)
+app.post('/api/clientes/actualizar-telefono', async (req, res) => {
+    const { id, telefono } = req.body;
+    await Cliente.findByIdAndUpdate(id, { telefono });
+    res.json({ ok: true });
+});
+
+// 2. OPERACIONES (Venta, Cobro, Gasto)
 app.post('/api/operaciones', async (req, res) => {
-    const { clienteId, compra, pago, metodo, receptorId } = req.body;
+    const { clienteId, compra, pago, metodo, receptorId, esGasto, detalleGasto } = req.body;
     
+    // CASO GASTO
+    if (esGasto) {
+        const op = new Operacion({
+            cliente: "GASTO INTERNO",
+            compra: 0, pago: pago, metodo: 'EFECTIVO', // Gastos salen de Efectivo
+            esGasto: true, detalleGasto: detalleGasto.toUpperCase()
+        });
+        await op.save();
+        return res.json({ ok: true });
+    }
+
+    // CASO VENTA NORMAL
     const cli = await Cliente.findById(clienteId);
     if (!cli) return res.status(404).json({error: "Cliente no encontrado"});
 
-    // Lógica Autocobro: Si paga de más, baja deuda vieja
     const saldoOperacion = compra - pago; 
     cli.deuda += saldoOperacion; 
     await cli.save();
 
-    // Proveedores (Si es transferencia)
     let nombreDestino = "";
     if (metodo === 'TRANSFERENCIA' && pago > 0 && receptorId) {
         const rec = await Receptor.findById(receptorId);
         if (rec) {
-            // Bajamos la deuda con el proveedor porque le pagamos
             rec.saldoPorPagar -= pago; 
-            if(rec.saldoPorPagar < 0) rec.saldoPorPagar = 0; // Evitar negativos locos
+            if(rec.saldoPorPagar < 0) rec.saldoPorPagar = 0; 
             await rec.save();
             nombreDestino = rec.nombre;
         }
@@ -118,90 +128,126 @@ app.post('/api/operaciones', async (req, res) => {
     res.json({ ok: true });
 });
 
-// Anulación (FILA NEGRA)
+// 3. CAJA (Lógica Ciega vs Full)
+app.post('/api/caja', async (req, res) => {
+    const { rol, fechaDesde, fechaHasta } = req.body; // Filtros de fecha para Dueño
+    
+    // Rango de fechas
+    let inicio = new Date(); inicio.setHours(0,0,0,0);
+    let fin = new Date(); fin.setHours(23,59,59,999);
+
+    if (rol === 'DUENO' && fechaDesde && fechaHasta) {
+        inicio = new Date(fechaDesde);
+        fin = new Date(fechaHasta); fin.setHours(23,59,59,999);
+    }
+
+    const ops = await Operacion.find({ fecha: { $gte: inicio, $lte: fin } }).sort({ fecha: -1 });
+    
+    // Cálculos Reales
+    let tVenta=0, tEfvo=0, tTarjeta=0, tTransf=0, tGastos=0;
+
+    const movimientosFiltrados = ops.map(o => {
+        if (!o.esBorrado && !o.esCierre) {
+            if (o.esGasto) {
+                tGastos += o.pago;
+                tEfvo -= o.pago; // Resta de efectivo
+            } else {
+                tVenta += o.compra;
+                if(o.metodo === 'EFECTIVO') tEfvo += o.pago;
+                if(o.metodo === 'TARJETA') tTarjeta += o.pago;
+                if(o.metodo === 'TRANSFERENCIA') tTransf += o.pago;
+            }
+        }
+
+        // CENSURA PARA EMPLEADO
+        if (rol === 'EMPLEADO') {
+            // Si es transferencia, ocultar nombre y destino
+            let cliDisplay = o.cliente;
+            if (o.metodo === 'TRANSFERENCIA') cliDisplay = "Transferencia (Oculto)";
+            
+            return {
+                _id: o._id,
+                fecha: o.fecha,
+                cliente: o.esGasto ? o.detalleGasto : cliDisplay,
+                pago: o.pago,
+                metodo: o.metodo,
+                esGasto: o.esGasto,
+                esBorrado: o.esBorrado,
+                usuarioBorrado: o.usuarioBorrado,
+                esCierre: o.esCierre
+            };
+        }
+        return o; // Dueño ve todo
+    });
+
+    if (rol === 'EMPLEADO') {
+        // Enviar Solo 10 últimos y TOTALES EN CERO (Caja Ciega)
+        res.json({
+            totales: { totalVenta: 0, efectivo: 0, tarjeta: 0, transf: 0, gastos: 0 },
+            movimientos: movimientosFiltrados.slice(0, 10)
+        });
+    } else {
+        // Enviar Todo Real
+        res.json({
+            totales: { totalVenta: tVenta, efectivo: tEfvo, tarjeta: tTarjeta, transf: tTransf, gastos: tGastos },
+            movimientos: movimientosFiltrados
+        });
+    }
+});
+
+// Cierre de Caja (Guardar registro)
+app.post('/api/cierre-caja', async (req, res) => {
+    const { monto } = req.body;
+    await new Operacion({
+        cliente: "CIERRE DE TURNO",
+        compra: 0, pago: 0, metodo: 'SISTEMA',
+        esCierre: true, montoCierre: monto
+    }).save();
+    res.json({ ok: true });
+});
+
+// Anulación
 app.post('/api/operaciones/anular', async (req, res) => {
     const { idOperacion, usuario } = req.body;
-    
     const op = await Operacion.findById(idOperacion);
     if (!op) return res.status(404).json({error: "No existe"});
-
-    // Marcar como borrado (No se elimina de la BD)
     op.esBorrado = true;
     op.fechaBorrado = new Date();
     op.usuarioBorrado = usuario;
     await op.save();
-
-    // NOTA: No devolvemos saldo a Receptor (tu regla de "No molestar al proveedor")
-    // Pero si afectará la caja del día si era Efectivo (al restar en el reporte).
-
     res.json({ ok: true });
 });
 
-// Caja y Reportes
-app.get('/api/caja-hoy', async (req, res) => {
-    const inicio = new Date(); inicio.setHours(0,0,0,0);
-    const ops = await Operacion.find({ fecha: { $gte: inicio } }).sort({ fecha: -1 });
-    
-    let totalVenta = 0;
-    let efectivo = 0;
-    let tarjeta = 0;
-    let transf = 0;
-    let gastos = 0;
-
-    ops.forEach(o => {
-        if (!o.esBorrado) { // Solo sumar si NO está borrado
-            if (o.esGasto) {
-                gastos += o.pago;
-                if(o.metodo === 'EFECTIVO') efectivo -= o.pago;
-            } else {
-                totalVenta += o.compra;
-                if(o.metodo === 'EFECTIVO') efectivo += o.pago;
-                if(o.metodo === 'TARJETA') tarjeta += o.pago;
-                if(o.metodo === 'TRANSFERENCIA') transf += o.pago;
-            }
-        }
-    });
-
-    res.json({ 
-        totales: { totalVenta, efectivo, tarjeta, transf, gastos },
-        movimientos: ops // Enviamos TODO (incluso borrados) para que el front los pinte de negro
-    });
+// Sugerencias de Gastos (Smart Search)
+app.get('/api/gastos/sugerencias/:query', async (req, res) => {
+    const q = req.params.query;
+    const regex = new RegExp(q, 'i');
+    // Busca gastos previos para autocompletar
+    const gastos = await Operacion.find({ esGasto: true, detalleGasto: regex }).distinct('detalleGasto');
+    res.json(gastos.slice(0, 5));
 });
 
-// Receptores (Proveedores)
+// 4. RECEPTORES
 app.get('/api/receptores', async (req, res) => {
     const list = await Receptor.find().sort({nombre: 1});
     res.json(list);
 });
-
 app.post('/api/receptores', async (req, res) => {
     const { nombre, alias } = req.body;
-    let r = await Receptor.findOne({ nombre: nombre.toUpperCase() });
-    if (!r) {
-        // Creamos con deuda 0 inicial
-        await new Receptor({ nombre: nombre.toUpperCase(), alias }).save();
-    }
+    await new Receptor({ nombre: nombre.toUpperCase(), alias: alias.toUpperCase() }).save();
     res.json({ ok: true });
 });
 
-// BACKUP ENCRIPTADO (Simulado para descarga)
-app.get('/api/backup/download', async (req, res) => {
-    const clientes = await Cliente.find();
-    const ops = await Operacion.find();
-    const receptores = await Receptor.find();
-    
-    const data = JSON.stringify({ fecha: new Date(), clientes, ops, receptores });
-    // Encriptación simple (Base64) para que no sea legible a simple vista
-    const encriptado = Buffer.from(data).toString('base64'); 
-    
-    res.setHeader('Content-disposition', 'attachment; filename=BACKUP_SEGURIDAD_ENCRIPTADO.enc');
+// 5. BACKUP MOCKUP
+app.get('/api/backup/download', (req, res) => {
+    const data = "BACKUP_ENCRIPTADO_DE_SEGURIDAD_" + Date.now();
+    res.setHeader('Content-disposition', 'attachment; filename=BACKUP_DATA.enc');
     res.setHeader('Content-type', 'text/plain');
-    res.send(encriptado);
+    res.send(Buffer.from(data).toString('base64'));
 });
 
-// Servidor Estático
+// Servidor
 app.use(express.static(__dirname));
 app.get('*', (req, res) => res.sendFile(path.resolve(__dirname, 'index.html')));
-
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 SERVIDOR LISTO EN PUERTO ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 SERVIDOR V4 LISTO EN PUERTO ${PORT}`));
