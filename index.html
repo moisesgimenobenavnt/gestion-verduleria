@@ -3,41 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SaaS Verdulería PRO</title>
+    <title>SaaS Verdulería V5.3</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
         :root {
-            --bg: #eceff1; --negro: #000000; 
+            --bg: #eceff1; 
             --rojo: #d50000; --verde: #00c853; --amarillo: #ffd600;
         }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); margin: 0; padding-bottom: 100px; overflow-x: hidden; }
         .oculto { display: none !important; }
 
-        /* HEADER REDISEÑADO (3 SECCIONES) */
+        /* --- HEADER DINÁMICO --- */
         .header-pro { 
             position: sticky; top: 0; z-index: 1000; background: white; border-bottom: 4px solid #000; 
             padding: 5px; display: flex; justify-content: space-between; align-items: flex-start;
-            height: 90px; /* Altura para los 3cm aprox */
+            transition: all 0.3s ease;
         }
-        
-        .header-left { width: 25%; font-size: 11px; color: #555; font-weight: bold; }
-        
+
+        /* LADO IZQUIERDO (PROPIEDAD) */
+        .header-left { width: 30%; font-size: 10px; color: #555; font-weight: bold; line-height: 1.2; }
+
+        /* CENTRO (LOGO) */
         .header-center { 
-            width: 40%; height: 100%; display: flex; justify-content: center; align-items: center; 
-            border: 1px dashed #ccc; position: relative;
+            width: 40%; height: 90px; display: flex; justify-content: center; align-items: center; 
+            border: 1px dashed #ccc; position: relative; transition: all 0.3s;
         }
-        .btn-ojo { position: absolute; top: 0; right: 0; background: #eee; border: 1px solid #999; cursor: pointer; }
-        
+        .btn-ojo { 
+            position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%); 
+            background: #000; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; 
+            cursor: pointer; z-index: 10; font-size: 14px;
+        }
+
+        /* DERECHA (RELOJES) */
         .header-right { 
             width: 30%; display: flex; flex-direction: column; gap: 5px; align-items: flex-end; 
         }
-        
         .reloj-box {
-            background: var(--rojo); color: black; font-weight: 900; font-size: 20px;
-            padding: 5px 10px; border: 2px solid black; text-align: center; width: 100%;
+            background: var(--rojo); color: black; font-weight: 900; font-size: 18px;
+            padding: 5px; border: 2px solid black; text-align: center; width: 100%; box-sizing: border-box;
+        }
+
+        /* --- ESTADO PLEGADO (ARREMANGADO) --- */
+        .header-pro.plegado .header-center {
+            height: 0; opacity: 0; padding: 0; border: none; width: 0; overflow: hidden;
+        }
+        .header-pro.plegado .header-right {
+            flex-direction: row; width: 60%; justify-content: flex-end;
+        }
+        .header-pro.plegado .reloj-box {
+            font-size: 14px; padding: 2px; width: auto;
         }
 
         /* LOGIN */
@@ -45,7 +62,7 @@
         .input-lg { padding: 15px; width: 80%; margin: 10px 0; border: 2px solid #000; text-align: center; font-size: 18px; text-transform: uppercase; }
         .btn-lg { padding: 15px; width: 85%; background: #000; color: #fff; font-weight: bold; border: none; font-size: 18px; cursor: pointer; }
 
-        /* BACKUP MODAL */
+        /* BACKUP ALERT */
         #backupModal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(200,0,0,0.98); z-index:10000; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white; text-align:center; padding:20px; }
         
         /* APP */
@@ -54,7 +71,7 @@
         .sugerencias { position: absolute; background: white; width: 95%; border: 1px solid #000; z-index: 200; max-height: 250px; overflow-y: auto; }
         .item-sug { padding: 15px; border-bottom: 1px solid #eee; font-size: 18px; cursor: pointer; }
 
-        /* FICHA CLIENTE & DEUDA GIGANTE */
+        /* FICHA & DEUDA */
         .nombre-cliente { font-size: 30px; font-weight: 900; text-align: center; margin: 10px 0; text-transform: uppercase; }
         .deuda-gigante {
             width: 100%; padding: 15px; text-align: center; font-size: 24px; font-weight: 900;
@@ -66,7 +83,6 @@
         /* INPUTS */
         .monto-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .inp-dinero { padding: 15px; font-size: 24px; text-align: center; font-weight: bold; border: 2px solid #555; width: 100%; box-sizing: border-box; }
-        
         .btn-metodo { padding: 15px; border: 2px solid #ccc; background: white; font-weight: bold; cursor: pointer; }
         .btn-metodo.active { background: #212121; color: white; border-color: black; }
 
@@ -95,7 +111,7 @@
 <body>
 
 <div id="loginScreen">
-    <h1>ACCESO PRO v5.2</h1>
+    <h1>ACCESO V5.3</h1>
     <input id="u" class="input-lg" placeholder="USUARIO" autocomplete="off">
     <input id="c" type="password" class="input-lg" placeholder="CONTRASEÑA">
     <button class="btn-lg" onclick="login()">ENTRAR</button>
@@ -109,12 +125,13 @@
 
 <div id="app" class="oculto">
     
-    <div class="header-pro">
+    <div id="headerPrincipal" class="header-pro">
+        <button class="btn-ojo" onclick="toggleHeader()">👁️</button>
+
         <div class="header-left">
-            SOFTWARE EN ALQUILER<br>PROPIEDAD DE MOISÉS<br>SOPORTE: XXXXXX
+            SOFTWARE EN ALQUILER<br>PROPIEDAD DE MOISÉS<br>SOPORTE: +54 9...
         </div>
-        <div class="header-center" id="logoArea">
-            <button class="btn-ojo" onclick="toggleLogo()">👁️</button>
+        <div class="header-center">
             <span style="color:#ccc;">ESPACIO LOGO (3cm)</span>
         </div>
         <div class="header-right">
@@ -224,15 +241,7 @@ setInterval(() => {
     document.getElementById('clockTime').innerText = d.toLocaleTimeString();
 }, 1000);
 
-window.onload = function() {
-    const sesion = JSON.parse(localStorage.getItem('sesion_activa'));
-    if(sesion) {
-        ROL = sesion.rol; USER = sesion.usuario;
-        document.getElementById('loginScreen').style.display = 'none';
-        start();
-    }
-}
-
+// --- LOGIN (SIN MEMORIA AUTOMÁTICA) ---
 async function login() {
     const u = document.getElementById('u').value;
     const c = document.getElementById('c').value;
@@ -243,7 +252,7 @@ async function login() {
     const data = await res.json();
     if(data.ok) {
         ROL=data.rol; USER=data.nombre;
-        localStorage.setItem('sesion_activa', JSON.stringify({rol:ROL, usuario:USER}));
+        // NO GUARDAMOS EN LOCALSTORAGE PARA OBLIGAR LOGIN SIEMPRE
         document.getElementById('loginScreen').style.display='none';
         if(data.pedirBackup) document.getElementById('backupModal').classList.remove('oculto');
         else start();
@@ -261,6 +270,11 @@ function start() {
     loadCaja();
 }
 
+function toggleHeader() {
+    document.getElementById('headerPrincipal').classList.toggle('plegado');
+}
+
+// CLIENTES
 async function buscar(q) {
     if(q.length<1) return document.getElementById('sugerencias').classList.add('oculto');
     const res = await fetch(`/api/sugerencias/${q}`);
@@ -283,7 +297,6 @@ function selCli(c) {
     document.getElementById('sugerencias').classList.add('oculto');
     document.getElementById('buscador').value = '';
     document.getElementById('ficha').classList.remove('oculto');
-    
     document.getElementById('cliNombre').innerText = c.nombre;
     document.getElementById('cliTel').innerHTML = `${c.telefono || 'Sin Tel'} <i class="fa fa-pencil" onclick="editarTel()"></i>`;
     
@@ -297,7 +310,6 @@ function selCli(c) {
     }
 }
 
-// LOGICA VENTA Y LIMPIEZA
 function resetForm() {
     document.getElementById('ficha').classList.add('oculto');
     document.getElementById('buscador').value = '';
@@ -326,7 +338,6 @@ async function guardar() {
     else if(METODO === 'TARJETA') body.tarjeta = pago;
     else if(METODO === 'TRANSFERENCIA') body.transferencia = pago;
 
-    // VALIDACION TOPE
     if(body.transferencia > 0 && rId) {
         const rec = RECEPTORES.find(r => r._id === rId);
         if(rec && body.transferencia > rec.topeMaximo) {
@@ -340,20 +351,17 @@ async function guardar() {
         const res = await fetch('/api/operaciones', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
         if(res.ok) {
             alert("✅ VENTA GUARDADA");
-            resetForm(); // LIMPIEZA AUTOMATICA
+            resetForm(); 
             loadCaja();
         }
     } catch(e) { alert("Error conexión"); }
 }
 
-// GASTOS (BUSCADOR ARREGLADO)
+// GASTOS (CORREGIDO)
 async function busGas(q) {
     const div = document.getElementById('sugGas');
     if(q.length<1) return div.classList.add('oculto');
-    
-    // PERMITIR CREAR SIEMPRE
     div.innerHTML = `<div class="item-sug" style="color:blue" onclick="selGas('${q}')">➕ CREAR NUEVO: ${q}</div>`;
-    
     const res = await fetch(`/api/gastos/sugerencias/${q}`);
     const data = await res.json();
     data.forEach(g => div.innerHTML+=`<div class="item-sug" onclick="selGas('${g}')">${g}</div>`);
@@ -364,6 +372,8 @@ function selGas(n) {
     document.getElementById('sugGas').classList.add('oculto');
     document.getElementById('formGas').classList.remove('oculto');
     document.getElementById('lblGas').innerText = n;
+    // PONER EL NOMBRE EN EL INPUT PARA QUE SE VEA CLARO
+    document.getElementById('bGas').value = n; 
     document.getElementById('mGas').value = '';
     document.getElementById('mGas').focus();
 }
@@ -382,7 +392,7 @@ async function saveGas() {
     loadCaja();
 }
 
-// CAJA (ADMIN VE TODO)
+// CAJA
 async function loadCaja() {
     const fd = document.getElementById('fd').value;
     const fh = document.getElementById('fh').value;
@@ -394,7 +404,6 @@ async function loadCaja() {
     
     if(ROL !== 'EMPLEADO') {
         const t = data.totales;
-        // DESGLOSE COMPLETO PARA ADMIN
         document.getElementById('resumenCaja').innerHTML = `
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; background:#fafafa; padding:10px; border:1px solid #ccc;">
                 <div>EFECTIVO: <b>$${format(t.efectivoReal)}</b></div>
@@ -411,10 +420,8 @@ async function loadCaja() {
     div.innerHTML = '';
     data.movimientos.forEach(m => {
         let estilo = m.esBorrado ? "fila-audit fila-negra" : "fila-audit";
-        
         let detalle = '';
         if(m.esCierre) {
-            // AQUI APARECE EL NOMBRE DE QUIEN GUARDO LA PLATA
             estilo += " style='background:#e0f7fa'";
             detalle = `🔒 ${m.tipoCierre} - <b>$${format(m.montoCierre)}</b><br><small>Por: ${m.usuarioCierre || 'Desconocido'}</small>`;
         } else {
@@ -447,8 +454,7 @@ function toggle(id){ document.getElementById(id).classList.toggle('show'); }
 function doBackup(){ window.open('/api/backup/download'); fetch('/api/backup/confirmar',{method:'POST'}); setTimeout(()=>{document.getElementById('backupModal').classList.add('oculto'); start();},2000); }
 async function cerrar(tipo){ const n=document.getElementById('nomCierre').value; const m=clean(document.getElementById('monCierre').value); if(!n||m<=0)return alert("Datos incompletos"); await fetch('/api/cierre-caja',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tipo,monto:m,usuario:n})}); alert("Guardado"); location.reload(); }
 async function editarTel(){ const n=prompt("Teléfono:",CLIENTE.telefono); if(n) { await fetch('/api/clientes/editar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:CLIENTE._id,telefono:n})}); document.getElementById('cliTel').innerHTML=`${n} <i class="fa fa-pencil" onclick="editarTel()"></i>`; } }
-function toggleLogo(){ const l=document.getElementById('logoArea'); if(l.style.display==='none')l.style.display='flex'; else l.style.display='none'; }
-function logout(){ localStorage.removeItem('sesion_activa'); location.reload(); }
+function logout(){ location.reload(); }
 function fmt(i){ i.value=format(clean(i.value)); }
 function clean(v){ return parseInt(v.toString().replace(/\D/g,''))||0; }
 function format(v){ return new Intl.NumberFormat('es-AR').format(v); }
