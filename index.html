@@ -9,37 +9,40 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Roboto:wght@400;900&display=swap" rel="stylesheet">
 
     <style>
-        /* ==========================================
-           1. PALETA DE COLORES (IDENTIDAD DE MARCA)
-           ========================================== */
+        /* =====================================================================
+           1. VARIABLES GLOBALES DE DISEÑO (LA PALETA DE COLORES)
+           ===================================================================== */
         :root {
-            --rojo-fosfo: #ff0000;       /* Alertas críticas y Deuda */
-            --verde-ok: #00c853;         /* Confirmaciones y Dinero */
-            --amarillo: #ffd600;         /* Advertencias */
-            --fondo-negro: #000000;      /* Contrastes U2 */
-            --gris-panel: #263238;       /* Estructura Sótano */
-            --azul-moises: #1a237e;      /* Auditoría Forense */
-            --blanco: #ffffff;
-            --naranja-pago: #ff6d00;     /* Pagos especiales */
+            --rojo-fosfo: #ff0000;       /* Para deudas y alertas críticas */
+            --verde-ok: #00c853;         /* Para dinero entrante y éxito */
+            --amarillo: #ffd600;         /* Para advertencias de seguridad */
+            --fondo-negro: #000000;      /* Para contrastes altos (Usuario 2) */
+            --gris-panel: #263238;       /* Para los paneles del sótano */
+            --azul-moises: #1a237e;      /* Para la auditoría forense */
+            --blanco: #ffffff;           /* Fondo general */
+            --naranja-pago: #ff6d00;     /* Para botones de pago a proveedores */
         }
 
-        /* ==========================================
-           2. CONFIGURACIÓN GENERAL
-           ========================================== */
+        /* =====================================================================
+           2. CONFIGURACIÓN BASE DEL CUERPO (BODY)
+           ===================================================================== */
         body { 
             font-family: 'Roboto', sans-serif; 
             margin: 0; 
             background: #eceff1; 
-            overflow-y: auto; /* Scroll permitido */
+            overflow-y: auto; /* Permitir scroll vertical siempre */
             min-height: 100vh;
-            padding-bottom: 150px; /* Espacio extra al final */
+            padding-bottom: 150px; /* Espacio extra al final para scroll cómodo */
         }
 
-        .oculto { display: none !important; }
+        /* Clase utilitaria para ocultar elementos */
+        .oculto { 
+            display: none !important; 
+        }
 
-        /* ==========================================
-           3. HEADER FIJO (PROPIEDAD DEL SOFTWARE)
-           ========================================== */
+        /* =====================================================================
+           3. CABECERA FIJA (HEADER) - MARCA DEL PROPIETARIO
+           ===================================================================== */
         .header-moises {
             background: var(--blanco);
             border-bottom: 6px solid var(--fondo-negro);
@@ -47,9 +50,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            position: sticky;
+            position: sticky; /* Se queda pegado arriba al bajar */
             top: 0;
-            z-index: 5000;
+            z-index: 5000; /* Siempre encima de todo */
             box-shadow: 0 5px 20px rgba(0,0,0,0.4);
         }
 
@@ -85,15 +88,16 @@
             border: 2px solid #eee;
         }
 
-        /* ==========================================
-           4. FORMULARIOS E INPUTS (ALTA VISIBILIDAD)
-           ========================================== */
+        /* =====================================================================
+           4. CONTENEDORES Y FORMULARIOS (INPUTS)
+           ===================================================================== */
         .contenedor-principal {
             padding: 30px;
             max-width: 1000px;
             margin: auto;
         }
         
+        /* Estilo de las cajas de texto (Gigantes y claras) */
         .input-moises {
             width: 100%;
             padding: 25px;
@@ -121,9 +125,9 @@
             font-weight: normal;
         }
 
-        /* ==========================================
-           5. BOTONES DE ACCIÓN (INDSTRUCTIBLES)
-           ========================================== */
+        /* =====================================================================
+           5. BOTONES DE ACCIÓN (ESTILO INDESTRUCTIBLE)
+           ===================================================================== */
         .btn-guardar-total {
             width: 100%;
             padding: 35px;
@@ -134,14 +138,14 @@
             border: 5px solid #000;
             border-radius: 20px;
             cursor: pointer;
-            box-shadow: 0 15px 0 #00692c;
+            box-shadow: 0 15px 0 #00692c; /* Efecto 3D */
             text-transform: uppercase;
             letter-spacing: 1px;
             transition: transform 0.1s, box-shadow 0.1s;
         }
         
         .btn-guardar-total:active {
-            transform: translateY(8px);
+            transform: translateY(8px); /* Efecto de hundimiento al presionar */
             box-shadow: 0 7px 0 #00692c;
         }
 
@@ -153,15 +157,27 @@
             border-color: #b0bec5;
         }
 
-        .btn-rojo { background: var(--rojo-fosfo); box-shadow: 0 15px 0 #b71c1c; }
-        .btn-rojo:active { box-shadow: 0 7px 0 #b71c1c; }
+        /* Variaciones de botones */
+        .btn-rojo { 
+            background: var(--rojo-fosfo); 
+            box-shadow: 0 15px 0 #b71c1c; 
+        }
+        .btn-rojo:active { 
+            box-shadow: 0 7px 0 #b71c1c; 
+        }
 
-        .btn-naranja { background: var(--naranja-pago); box-shadow: 0 15px 0 #e65100; border-color: #e65100; }
-        .btn-naranja:active { box-shadow: 0 7px 0 #e65100; }
+        .btn-naranja { 
+            background: var(--naranja-pago); 
+            box-shadow: 0 15px 0 #e65100; 
+            border-color: #e65100; 
+        }
+        .btn-naranja:active { 
+            box-shadow: 0 7px 0 #e65100; 
+        }
 
-        /* ==========================================
-           6. TARJETAS DE INFORMACIÓN
-           ========================================== */
+        /* =====================================================================
+           6. TARJETAS DE INFORMACIÓN (CLIENTE Y DEUDA)
+           ===================================================================== */
         .nombre-cliente-xl {
             font-size: 60px;
             font-weight: 900;
@@ -203,9 +219,9 @@
             text-shadow: 4px 4px 0px #000;
         }
 
-        /* ==========================================
-           7. EL SÓTANO (ACORDEONES DE GESTIÓN)
-           ========================================== */
+        /* =====================================================================
+           7. EL SÓTANO (ACORDEONES DESPLEGABLES)
+           ===================================================================== */
         .sotano-container {
             margin-top: 80px;
             border-top: 10px solid #000;
@@ -248,10 +264,14 @@
             border-top: none;
         }
 
-        /* ==========================================
+        /* =====================================================================
            8. TABLAS Y AUDITORÍA FORENSE
-           ========================================= */
-        table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+           ===================================================================== */
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 25px; 
+        }
         
         th { 
             background: #cfd8dc; 
@@ -295,11 +315,19 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
         }
 
-        /* Estilos de Impresión */
+        /* Estilos específicos para impresión en PDF o papel */
         @media print {
-            .btn-guardar-total, .sotano-container, #pantallaLogin { display: none; }
+            .btn-guardar-total, 
+            .sotano-container, 
+            #pantallaLogin { 
+                display: none; 
+            }
             body { background: white; }
-            .deuda-historica-card { color: black; background: white; border: 2px solid black; }
+            .deuda-historica-card { 
+                color: black; 
+                background: white; 
+                border: 2px solid black; 
+            }
         }
     </style>
 </head>
@@ -492,8 +520,10 @@
     </div>
 
     <script>
-        // --- 1. CONFIGURACIÓN DE CONEXIÓN AL PUERTO 3001 ---
-        const API_URL = 'http://localhost:3001/api'; 
+        // --- 1. CONFIGURACIÓN VITAL PARA LA NUBE ---
+        // Al dejar '/api', el navegador entiende que debe buscar en el MISMO servidor
+        // donde está alojada la página. Esto arregla el error de "puerto 10000 vs 3001".
+        const API_URL = '/api'; 
         
         let USUARIO_ACTUAL = { rol: 0, nombre: '' };
 
@@ -560,7 +590,7 @@
             if(query.length < 2) return sug.classList.add('oculto');
 
             try {
-                // Petición al servidor (Hongo) al puerto 3001
+                // Petición al servidor (Hongo)
                 const res = await fetch(`${API_URL}/clientes/${query}`);
                 
                 // Validación de conexión
@@ -592,8 +622,8 @@
 
             } catch (e) {
                 console.error("No se pudo conectar a DB:", e);
-                sug.innerHTML = `<div style="padding:20px; color:white; background:red; font-weight:bold;">⚠️ ERROR DE CONEXIÓN CON SERVIDOR PUERTO 3001</div>`;
-                sug.classList.remove('oculto');
+                // Si falla, mostramos fallback discreto
+                sug.classList.add('oculto');
             }
         }
 
@@ -674,7 +704,7 @@
                 document.getElementById('inAbona').value = '';
 
             } catch(e) {
-                alert("❌ ERROR CRÍTICO: El servidor no responde. Verifique que 'server.js' esté encendido.");
+                alert("❌ ERROR CRÍTICO: El servidor no responde.");
             }
         }
 
@@ -815,7 +845,7 @@
 
             try {
                 // Aquí deberíamos llamar a una ruta específica, simulamos con búsqueda general
-                const res = await fetch(`${API_URL}/clientes/`); 
+                const res = await fetch(`${API_URL}/clientes`); 
                 const clientes = await res.json(); 
 
                 // Filtramos solo los que tienen deuda
@@ -902,7 +932,7 @@
             }
         }
 
-        // UTILIDAD DE INTERFAZ
+        // UTILIDAD DE INTERFAZ (TOGGLE)
         function toggle(id) {
             const panel = document.getElementById(id);
             if(panel.style.display === 'block') panel.style.display = 'none';
