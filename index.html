@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Visión Moisés V5</title>
+    <title>Visión Moisés V5.1</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -12,11 +12,10 @@
         :root {
             --bg: #eceff1; --negro: #212121; 
             --rojo: #d50000; --verde: #00c853; --amarillo: #ffd600;
-            --fosforo: #ff3d00; /* Rojo Fosforito */
+            --fosforo: #ff3d00;
         }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; overflow-x: hidden; }
         .oculto { display: none !important; }
-        .full-screen { width: 100%; height: 100vh; position: fixed; top: 0; left: 0; background: white; z-index: 5000; overflow-y: auto; }
 
         /* HEADER */
         .header-fijo { 
@@ -82,13 +81,14 @@
         /* MODAL SPLIT PAYMENT */
         #modalSplit { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:3000; display:flex; justify-content:center; align-items:center; }
         .split-content { background: white; padding: 20px; width: 90%; max-width: 400px; border-radius: 5px; }
+        .btn-conf-split { width: 100%; padding: 15px; background: black; color: white; border: none; font-size: 18px; font-weight: bold; margin-top: 10px; cursor: pointer; }
 
     </style>
 </head>
 <body>
 
 <div id="loginScreen">
-    <h2>VISIÓN MOISÉS V5</h2>
+    <h2>VISIÓN MOISÉS V5.1</h2>
     <input id="u" class="input-lg" placeholder="USUARIO" autocomplete="off">
     <input id="c" type="password" class="input-lg" placeholder="CONTRASEÑA">
     <button class="btn-lg" onclick="login()">ENTRAR</button>
@@ -195,9 +195,7 @@
         <div class="panel">Ver Historial Financiero...</div>
         
         <button class="acordeon">4. DEUDORES (LA TRAMPA) <span>▼</span></button>
-        <div class="panel">
-            <button>Ordenar Mayor Monto</button> <button>Ordenar Antigüedad</button>
-        </div>
+        <div class="panel">Trampa de deudores...</div>
 
         <button class="acordeon">5. RECEPTORES <span>▼</span></button>
         <div class="panel">Gestión de Deudas Proveedores...</div>
@@ -211,24 +209,35 @@
 <div id="modalSplit" class="oculto">
     <div class="split-content">
         <h3>PAGO COMBINADO</h3>
-        <label>Efectivo:</label> <input type="tel" id="spEf" class="inp-dinero" onkeyup="fmt(this); sumSplit()">
-        <label>Tarjeta:</label> <input type="tel" id="spTa" class="inp-dinero" onkeyup="fmt(this); sumSplit()">
-        <label>Transf:</label> <input type="tel" id="spTr" class="inp-dinero" onkeyup="fmt(this); sumSplit()">
+        <label>Efectivo:</label> <input type="tel" id="spEf" class="inp-dinero" onkeyup="fmt(this); sumSplit()" value="0">
+        <label>Tarjeta:</label> <input type="tel" id="spTa" class="inp-dinero" onkeyup="fmt(this); sumSplit()" value="0">
+        <label>Transf:</label> <input type="tel" id="spTr" class="inp-dinero" onkeyup="fmt(this); sumSplit()" value="0">
         <h3 id="spTot">Total: $0</h3>
-        <button class="btn-lg" onclick="confSplit()">CONFIRMAR</button>
-        <button style="margin-top:10px; color:red; border:none; background:none;" onclick="document.getElementById('modalSplit').classList.add('oculto')">Cancelar</button>
+        <button class="btn-conf-split" onclick="confSplit()">CONFIRMAR MONTO</button>
+        <button style="margin-top:10px; color:red; border:none; background:none; width:100%; font-size:16px;" onclick="document.getElementById('modalSplit').classList.add('oculto')">CANCELAR</button>
     </div>
 </div>
 
 <script>
 // --- CORE ---
-let ROL='', USER='', CLIENTE=null, METODO='', RECEPTORES=[], SPLIT={};
+let ROL='', USER='', CLIENTE=null, METODO='', RECEPTORES=[], SPLIT={efectivo:0, tarjeta:0, transferencia:0};
 
 // RELOJ
 setInterval(() => {
     const d = new Date();
     document.getElementById('clock').innerText = d.toLocaleTimeString();
 }, 1000);
+
+// VERIFICAR SESIÓN ACTIVA (NO PERDER DATOS AL RECARGAR)
+window.onload = function() {
+    const sesion = JSON.parse(localStorage.getItem('sesion_activa'));
+    if(sesion) {
+        ROL = sesion.rol;
+        USER = sesion.usuario;
+        document.getElementById('loginScreen').style.display = 'none';
+        start();
+    }
+}
 
 // --- LOGIN ---
 async function login() {
@@ -241,14 +250,21 @@ async function login() {
     const data = await res.json();
     if(data.ok) {
         ROL=data.rol; USER=data.nombre;
-        document.getElementById('loginScreen').style.display='none';
+        // GUARDAR SESIÓN
+        localStorage.setItem('sesion_activa', JSON.stringify({rol:ROL, usuario:USER}));
         
+        document.getElementById('loginScreen').style.display='none';
         if(data.pedirBackup) {
             document.getElementById('backupModal').classList.remove('oculto');
         } else {
             start();
         }
     } else alert("Datos incorrectos");
+}
+
+function logout() { 
+    localStorage.removeItem('sesion_activa'); 
+    location.reload(); 
 }
 
 async function doBackup() {
@@ -271,8 +287,6 @@ function start() {
     }
     loadCaja();
 }
-
-function logout() { location.reload(); }
 
 // --- CLIENTES ---
 async function buscar(q) {
@@ -343,7 +357,6 @@ function setMet(m, btn) {
     const box = document.getElementById('boxReceptor');
     if(m === 'TRANSFERENCIA') {
         box.style.display = 'block';
-        // Memoria Receptor
         const last = localStorage.getItem('lastRec');
         if(last) { document.getElementById('selRec').value = last; selRec(); }
     } else {
@@ -370,24 +383,20 @@ function selRec() {
         localStorage.setItem('lastRec', id);
         document.getElementById('recNombre').innerText = r.nombre;
         document.getElementById('selRec').classList.add('oculto');
-        
-        // Semáforo Lógica
-        const transfMonto = METODO==='MIXTO' ? SPLIT.transferencia : clean(document.getElementById('inPago').value);
-        const deudaFutura = r.saldoPorPagar + transfMonto; // Simplificado (en realidad deuda baja al pagar, pero aquí validamos tope de recepción si aplica)
-        // NOTA: La lógica de receptor suele ser "cuánto le debo".
-        // Si pagamos por transferencia, REDUCIMOS deuda.
-        // Pero Moisés pidió "Bloquear si supera el monto". Asumo se refiere a tope de ingreso diario del receptor.
-        
-        // Mostramos Tooltip
         document.getElementById('recInfo').innerText = `Tope: $${format(r.topeMaximo)} | Deuda act: $${format(r.saldoPorPagar)}`;
-        
-        // Línea verde ancha (Visual)
         document.getElementById('boxReceptor').style.borderBottom = "5px solid #00c853";
     }
+    val(); // Revalidar botón guardar
 }
 
 // --- MIXTO ---
 function openSplit() {
+    // Resetear valores split
+    document.getElementById('spEf').value = 0;
+    document.getElementById('spTa').value = 0;
+    document.getElementById('spTr').value = 0;
+    document.getElementById('spTot').innerText = "Total: $0";
+    
     document.getElementById('modalSplit').classList.remove('oculto');
     METODO = 'MIXTO';
 }
@@ -403,16 +412,19 @@ function confSplit() {
     const r = clean(document.getElementById('spTr').value);
     const total = clean(document.getElementById('inPago').value);
     
-    if(e+t+r !== total) return alert("La suma no coincide con el monto ABONA");
+    if(e+t+r !== total) return alert("La suma de los pagos no coincide con el monto que ABONA");
     
     SPLIT = { efectivo: e, tarjeta: t, transferencia: r };
     document.getElementById('modalSplit').classList.add('oculto');
     
+    // Si hay transferencia en el split, mostrar receptor
     if(r > 0) {
         document.getElementById('boxReceptor').style.display='block';
     } else {
         document.getElementById('boxReceptor').style.display='none';
     }
+    
+    document.querySelectorAll('.btn-metodo').forEach(b=>b.classList.remove('active'));
     val();
 }
 
@@ -422,10 +434,16 @@ function val() {
     let ok = false;
     
     if(p>0 && METODO) {
-        if(METODO === 'TRANSFERENCIA' && !document.getElementById('selRec').value) ok=false;
-        else if(METODO === 'MIXTO' && SPLIT.transferencia > 0 && !document.getElementById('selRec').value) ok=false;
-        else ok=true;
-    } else if (v>0 && p===0) ok=true; // Deuda total
+        if(METODO === 'TRANSFERENCIA' && !document.getElementById('selRec').value) {
+            ok = false;
+        } else if(METODO === 'MIXTO' && SPLIT.transferencia > 0 && !document.getElementById('selRec').value) {
+            ok = false;
+        } else {
+            ok = true;
+        }
+    } else if (v>0 && p===0) {
+        ok = true; // Deuda total
+    }
     
     document.getElementById('btnGuardar').disabled = !ok;
 }
@@ -433,10 +451,11 @@ function val() {
 async function guardar() {
     const compra = clean(document.getElementById('inCompra').value);
     const pago = clean(document.getElementById('inPago').value);
+    const rId = document.getElementById('selRec').value;
     
     let body = {
         clienteId: CLIENTE._id, compra, pago, metodo: METODO,
-        efectivo: 0, tarjeta: 0, transferencia: 0, receptorId: document.getElementById('selRec').value
+        efectivo: 0, tarjeta: 0, transferencia: 0, receptorId: rId
     };
 
     if(METODO === 'MIXTO') {
@@ -447,23 +466,35 @@ async function guardar() {
     else if(METODO === 'TARJETA') body.tarjeta = pago;
     else if(METODO === 'TRANSFERENCIA') body.transferencia = pago;
 
-    // Validación Semáforo Receptor (Bloqueo)
-    if(body.transferencia > 0 && body.receptorId) {
-        const rec = RECEPTORES.find(r => r._id === body.receptorId);
-        // Si Moisés quiere bloquear cuando se envía más del tope:
-        if(body.transferencia > rec.topeMaximo) {
-            alert("⛔ BLOQUEO: Supera el monto permitido del receptor.");
-            document.getElementById('boxReceptor').classList.add('blocked');
-            return;
+    // Validación Tope Receptor
+    if(body.transferencia > 0 && rId) {
+        const rec = RECEPTORES.find(r => r._id === rId);
+        // Si quieres bloquear el tope:
+        if(rec && body.transferencia > rec.topeMaximo) {
+             alert("⛔ BLOQUEO: El monto supera el tope del receptor.");
+             return;
         }
     }
 
-    await fetch('/api/operaciones', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-    alert("✅ VENTA CORRECTA");
-    location.reload(); // Recarga limpia para User 1
+    try {
+        const res = await fetch('/api/operaciones', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        if(res.ok) {
+            alert("✅ VENTA GUARDADA CORRECTAMENTE");
+            // LIMPIEZA MANUAL SIN RECARGAR PÁGINA
+            document.getElementById('ficha').classList.add('oculto');
+            document.getElementById('buscador').value = '';
+            document.getElementById('inCompra').value = '';
+            document.getElementById('inPago').value = '';
+            document.getElementById('zonaPagos').classList.add('oculto');
+            METODO = '';
+            loadCaja(); // Actualizar lista abajo
+        } else {
+            alert("Error al guardar");
+        }
+    } catch(e) { console.error(e); alert("Error de conexión"); }
 }
 
-// --- GASTOS (Limpieza Automática) ---
+// --- GASTOS ---
 async function busGas(q) {
     if(q.length<2) return document.getElementById('sugGas').classList.add('oculto');
     const res = await fetch(`/api/gastos/sugerencias/${q}`);
@@ -477,7 +508,7 @@ function selGas(n) {
     document.getElementById('sugGas').classList.add('oculto');
     document.getElementById('formGas').classList.remove('oculto');
     document.getElementById('lblGas').innerText = n;
-    document.getElementById('mGas').value = ''; // Limpieza Automática
+    document.getElementById('mGas').value = ''; 
     document.getElementById('mGas').focus();
 }
 async function saveGas() {
@@ -525,7 +556,6 @@ async function loadCaja() {
                     `<i class="fa fa-trash" style="color:red; cursor:pointer" onclick="del(${m._id})"></i>`;
         }
         
-        // Censura U1 (Solo Ventas)
         if(ROL === 'EMPLEADO') {
             div.innerHTML += `
                 <div class="${estilo}">
@@ -533,7 +563,6 @@ async function loadCaja() {
                     <b>$${format(m.pago)}</b>
                 </div>`;
         } else {
-            // Full U2
             div.innerHTML += `
                 <div class="${estilo}">
                     <span>
@@ -559,6 +588,7 @@ async function cerrar(tipo) {
         body:JSON.stringify({tipo, monto:mon, usuario:nom})
     });
     alert("✅ " + tipo + " REALIZADO");
+    // Aquí sí recargamos para asegurar cierre limpio
     location.reload();
 }
 
