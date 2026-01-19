@@ -3,528 +3,578 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SaaS Verdulería V4</title>
+    <title>Visión Moisés V5</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
         :root {
-            --bg: #eceff1; --negro: #212121; --rojo: #d50000; --verde: #00c853; --amarillo: #ffd600;
+            --bg: #eceff1; --negro: #212121; 
+            --rojo: #d50000; --verde: #00c853; --amarillo: #ffd600;
+            --fosforo: #ff3d00; /* Rojo Fosforito */
         }
-        body { font-family: 'Roboto', sans-serif; background: var(--bg); margin: 0; padding-bottom: 50px; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; overflow-x: hidden; }
         .oculto { display: none !important; }
-        
-        /* LOGIN */
-        #pantallaLogin { position: fixed; top:0; left:0; width:100%; height:100%; background:#fff; z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; }
-        .input-login { width: 80%; max-width: 300px; padding: 15px; margin: 10px 0; border: 2px solid #333; text-align: center; text-transform: uppercase; font-size: 18px; }
-        .btn-entrar { width: 85%; max-width: 340px; padding: 15px; background: #000; color: #fff; border: none; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .full-screen { width: 100%; height: 100vh; position: fixed; top: 0; left: 0; background: white; z-index: 5000; overflow-y: auto; }
 
-        /* ALERTA BACKUP */
-        #modalBackup { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(200,0,0,0.98); z-index:10000; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white; text-align:center; padding:20px; box-sizing:border-box; }
+        /* HEADER */
+        .header-fijo { 
+            position: sticky; top: 0; z-index: 1000; background: white; border-bottom: 3px solid #000; 
+            padding: 10px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .reloj { color: var(--fosforo); font-weight: 900; font-size: 18px; text-shadow: 0px 0px 2px red; }
+        .marca-blanca { font-size: 10px; color: #777; }
+
+        /* LOGIN */
+        #loginScreen { position: fixed; top:0; left:0; width:100%; height:100%; background:#fff; z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+        .input-lg { padding: 15px; width: 80%; margin: 10px 0; border: 2px solid #000; text-align: center; font-size: 18px; text-transform: uppercase; }
+        .btn-lg { padding: 15px; width: 85%; background: #000; color: #fff; font-weight: bold; border: none; font-size: 18px; cursor: pointer; }
+
+        /* BACKUP MODAL */
+        #backupModal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(200,0,0,0.98); z-index:10000; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white; text-align:center; padding:20px; }
         
-        /* HEADER PRINCIPAL */
-        .bloque-principal { background: white; padding: 15px; border-bottom: 2px solid #ccc; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .buscador { width: 100%; padding: 15px; font-size: 20px; border: 2px solid #000; box-sizing: border-box; text-transform: uppercase; }
-        .sugerencias { background: white; border: 1px solid #ccc; max-height: 200px; overflow-y: auto; position: absolute; width: 90%; z-index: 200; }
+        /* BLOQUE VENTA */
+        .contenedor { padding: 10px; max-width: 800px; margin: 0 auto; }
+        .buscador { width: 100%; padding: 15px; font-size: 22px; border: 3px solid #000; box-sizing: border-box; text-transform: uppercase; }
+        .sugerencias { position: absolute; background: white; width: 95%; border: 1px solid #000; z-index: 200; max-height: 250px; overflow-y: auto; }
         .item-sug { padding: 15px; border-bottom: 1px solid #eee; font-size: 18px; cursor: pointer; }
 
         /* FICHA CLIENTE */
-        .ficha { margin-top: 10px; border-left: 5px solid #333; padding-left: 10px; }
-        .input-tel { border: none; border-bottom: 1px solid #999; width: 100%; padding: 5px; font-size: 16px; color: #555; margin-bottom: 5px; }
-        .deuda-badge { padding: 5px 10px; color: white; font-weight: bold; border-radius: 4px; display: inline-block; font-size: 20px; }
-        .bg-rojo { background: var(--rojo); }
-        .bg-verde { background: var(--verde); }
+        .nombre-cliente { font-size: 28px; font-weight: 900; text-align: center; margin: 10px 0 5px 0; text-transform: uppercase; }
+        .deuda-box { 
+            text-align: center; color: white; padding: 10px; margin: 5px auto; 
+            font-size: 22px; font-weight: bold; border-radius: 5px; width: 80%; 
+        }
+        .tel-box { text-align: center; margin-bottom: 10px; color: #555; }
+        .fa-pencil { cursor: pointer; color: blue; margin-left: 5px; }
 
-        /* INPUTS VENTA */
-        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .input-monto { padding: 15px; font-size: 22px; text-align: center; font-weight: bold; border: 2px solid #ccc; border-radius: 5px; width: 100%; box-sizing: border-box; }
+        /* INPUTS MONTO */
+        .monto-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .inp-dinero { padding: 15px; font-size: 24px; text-align: center; font-weight: bold; border: 2px solid #777; width: 100%; box-sizing: border-box; }
         
         /* BOTONES PAGO */
-        .grid-pagos { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 10px; }
-        .btn-pago { padding: 15px; border: 1px solid #ccc; background: #fff; font-weight: bold; cursor: pointer; }
-        .btn-pago.activo { background: #333; color: white; border-color: black; }
+        .btn-metodo { padding: 15px; border: 1px solid #ccc; background: white; font-weight: bold; cursor: pointer; }
+        .btn-metodo.active { background: #212121; color: white; border-color: black; }
 
-        /* COMPONENTE RECEPTOR (DOBLE CAJA + FLASH) */
-        .box-receptor-outer { margin-top: 15px; padding: 8px; border-radius: 8px; text-align: center; transition: background 0.3s; display: none; }
-        .box-receptor-inner { background: white; padding: 15px; border-radius: 5px; font-weight: bold; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); }
-        .flash-anim { animation: flash 0.3s 4; }
-        @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        /* SEMÁFORO RECEPTOR */
+        .receptor-box { 
+            margin-top: 15px; border: 4px solid transparent; padding: 5px; border-radius: 8px; display: none; 
+        }
+        .receptor-inner { background: white; border: 1px solid #ccc; padding: 15px; text-align: center; font-weight: bold; cursor: pointer; }
+        .blocked { border-color: var(--rojo); animation: shake 0.5s; }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } 100% { transform: translateX(0); } }
 
-        /* ACORDEONES (DESPLEGABLES) */
-        .acordeon { width: 100%; padding: 18px; text-align: left; background: #546e7a; color: white; border: none; margin-top: 5px; font-weight: bold; cursor: pointer; border-bottom: 1px solid #455a64; display: flex; justify-content: space-between; }
-        .panel { display: none; background: white; padding: 10px; border: 1px solid #ccc; }
+        /* DESPLEGABLES */
+        .acordeon { 
+            width: 100%; padding: 20px; text-align: left; background: #37474f; color: white; 
+            border: none; margin-top: 8px; font-weight: bold; font-size: 18px; 
+            display: flex; justify-content: space-between; cursor: pointer;
+        }
+        .panel { display: none; background: white; border: 1px solid #ccc; padding: 10px; }
         .show { display: block; }
 
-        /* LISTAS Y TABLAS */
-        .fila { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .fila-negra { background: black !important; color: white !important; text-decoration: line-through; }
-        .fila-negra span { color: white; }
+        /* FILAS NEGRAS */
+        .fila-audit { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #ddd; }
+        .fila-negra { background: #000; color: #fff; text-decoration: line-through; }
+        .fila-negra span { color: #fff; }
 
-        .btn-guardar { width: 100%; padding: 20px; background: var(--verde); color: white; font-size: 20px; font-weight: bold; border: none; margin-top: 15px; cursor: pointer; }
-        .btn-guardar:disabled { background: #ccc; }
+        /* MODAL SPLIT PAYMENT */
+        #modalSplit { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:3000; display:flex; justify-content:center; align-items:center; }
+        .split-content { background: white; padding: 20px; width: 90%; max-width: 400px; border-radius: 5px; }
 
     </style>
 </head>
 <body>
 
-    <div id="pantallaLogin">
-        <h2 style="margin-bottom:30px;">ACCESO SISTEMA</h2>
-        <input type="text" id="u" class="input-login" placeholder="USUARIO">
-        <input type="password" id="c" class="input-login" placeholder="CLAVE">
-        <button class="btn-entrar" onclick="login()">ENTRAR</button>
-        <p id="errorLogin" class="oculto" style="color:red; font-weight:bold;">DATOS INCORRECTOS</p>
+<div id="loginScreen">
+    <h2>VISIÓN MOISÉS V5</h2>
+    <input id="u" class="input-lg" placeholder="USUARIO" autocomplete="off">
+    <input id="c" type="password" class="input-lg" placeholder="CONTRASEÑA">
+    <button class="btn-lg" onclick="login()">ENTRAR</button>
+</div>
+
+<div id="backupModal" class="oculto">
+    <h1>🛑 ALERTA DE SEGURIDAD</h1>
+    <p>ES OBLIGATORIO REALIZAR UNA COPIA DE SEGURIDAD ENCRIPTADA.<br>(Requerido 1 vez al día).</p>
+    <button class="btn-lg" style="background:white; color:red; margin-top:20px;" onclick="doBackup()">⬇️ REALIZAR BACKUP Y ENTRAR</button>
+</div>
+
+<div id="app" class="oculto">
+    
+    <div class="header-fijo">
+        <div class="marca-blanca">
+            Software en Alquiler<br>Propiedad de Moisés
+        </div>
+        <div id="clock" class="reloj">00:00:00</div>
+        <button onclick="logout()" style="background:red; color:white; border:none; padding:5px;">Salir</button>
     </div>
 
-    <div id="modalBackup" class="oculto">
-        <h1>⚠️ ALERTA OBLIGATORIA</h1>
-        <p style="font-size:20px;">Regla del proveedor:<br>Debe descargar la copia de seguridad encriptada ahora mismo.</p>
-        <button class="btn-entrar" style="background:white; color:red; margin-top:20px;" onclick="descargarBackup()">⬇️ DESCARGAR COPIA</button>
-    </div>
-
-    <div id="app" class="oculto">
+    <div class="contenedor">
         
-        <div class="bloque-principal">
-            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px;">
-                <span id="lblUsuario">Usuario</span>
-                <span style="color:red; cursor:pointer;" onclick="location.reload()">[Salir]</span>
+        <input id="buscador" class="buscador" placeholder="BUSCAR CLIENTE..." onkeyup="buscar(this.value)" autocomplete="off">
+        <div id="sugerencias" class="sugerencias oculto"></div>
+
+        <div id="ficha" class="oculto">
+            <div class="nombre-cliente" id="cliNombre">CLIENTE</div>
+            <div class="tel-box">
+                <span id="cliTel">...</span> <i class="fa-solid fa-pencil" onclick="editarTel()"></i>
             </div>
-
-            <input type="text" id="buscador" class="buscador" placeholder="BUSCAR CLIENTE O TELÉFONO..." onkeyup="buscar(this.value)">
-            <div id="sugerencias" class="sugerencias oculto"></div>
-
-            <div id="ficha" class="ficha oculto">
-                <h2 id="cliNombre" style="margin:0;">NOMBRE</h2>
-                <input type="text" id="cliTel" class="input-tel" placeholder="Sin Teléfono" onchange="actualizarTel()">
-                
-                <div style="margin:10px 0;">
-                    <span id="badgeDeuda" class="deuda-badge">$ 0</span>
-                    <button onclick="imprimirPDF()" style="float:right; background:#333; color:white; border:none; padding:5px;">🖨️ PDF</button>
-                </div>
-
-                <div class="grid-inputs">
-                    <div><small>VENTA</small><input type="tel" id="inVenta" class="input-monto" placeholder="$0" onkeyup="fmt(this); val()"></div>
-                    <div><small>PAGO</small><input type="tel" id="inPago" class="input-monto" placeholder="$0" onkeyup="fmt(this); chkPago()"></div>
-                </div>
-
-                <div id="zonaPagos" class="oculto">
-                    <div class="grid-pagos">
-                        <button class="btn-pago" onclick="setMetodo('EFECTIVO', this)">EFECTIVO</button>
-                        <button class="btn-pago" onclick="setMetodo('TARJETA', this)">TARJETA</button>
-                        <button class="btn-pago" onclick="setMetodo('TRANSFERENCIA', this)">TRANSFER.</button>
-                    </div>
-                </div>
-
-                <div id="boxReceptor" class="box-receptor-outer">
-                    <div class="box-receptor-inner" 
-                         onmousedown="verOjo(true)" onmouseup="verOjo(false)"
-                         ontouchstart="verOjo(true)" ontouchend="verOjo(false)"
-                         onclick="cambiarReceptor()">
-                         <span id="txtReceptor">SELECCIONAR DESTINO</span>
-                    </div>
-                    <select id="selReceptor" class="oculto" onchange="seleccionarReceptor()"></select>
-                </div>
-
-                <button id="btnGuardar" class="btn-guardar" onclick="guardarVenta()" disabled>GUARDAR OPERACIÓN</button>
-            </div>
-        </div>
-
-        <button class="acordeon" onclick="toggle('panelCaja')">💰 CAJA Y MOVIMIENTOS <span>▼</span></button>
-        <div id="panelCaja" class="panel">
-            <div id="filtrosDueno" class="oculto" style="background:#eee; padding:10px; margin-bottom:10px;">
-                <label>Desde: <input type="date" id="fDesde"></label>
-                <label>Hasta: <input type="date" id="fHasta"></label>
-                <button onclick="cargarCaja()">🔎 Filtrar</button>
-                <div id="radiografia" style="margin-top:10px; font-weight:bold;"></div>
-            </div>
-
-            <div style="display:flex; gap:5px; margin-bottom:10px; padding:10px; background:#f5f5f5;">
-                <input type="tel" id="montoCierre" class="input-monto" style="font-size:16px; padding:10px;" placeholder="EFECTIVO EN CAJA" onkeyup="fmt(this)">
-                <button onclick="cerrarCaja()" style="background:black; color:white; border:none; padding:0 20px; font-weight:bold;">CERRAR CAJA</button>
-            </div>
-
-            <button onclick="cargarCaja()" style="width:100%; margin-bottom:10px;">🔄 ACTUALIZAR LISTA</button>
-            <div id="listaMovimientos"></div>
-        </div>
-
-        <button class="acordeon" onclick="toggle('panelGastos')">💸 GASTOS VARIOS <span>▼</span></button>
-        <div id="panelGastos" class="panel">
-            <p style="font-size:12px; color:#666;">Buscador Inteligente (Crea si no existe):</p>
-            <input type="text" id="buscaGasto" class="buscador" style="font-size:16px; padding:10px;" placeholder="EJ: BOLSAS..." onkeyup="buscarGasto(this.value)">
-            <div id="sugGastos" class="sugerencias oculto" style="position:relative;"></div>
             
-            <div id="formGasto" class="oculto" style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;">
-                <strong id="lblGasto"></strong>
-                <input type="tel" id="montoGasto" class="input-monto" placeholder="$ MONTO" onkeyup="fmt(this)">
-                <button onclick="guardarGasto()" class="btn-guardar" style="margin-top:5px; background:var(--rojo);">REGISTRAR GASTO (RESTA CAJA)</button>
+            <div id="cliDeudaBox" class="deuda-box bg-verde">AL DÍA ($0)</div>
+
+            <div class="monto-row">
+                <div>
+                    <small>TOTAL VENTA</small>
+                    <input type="tel" id="inCompra" class="inp-dinero" placeholder="$0" onkeyup="fmt(this); val()" autocomplete="off">
+                </div>
+                <div>
+                    <small>ABONA</small>
+                    <input type="tel" id="inPago" class="inp-dinero" placeholder="$0" onkeyup="fmt(this); chkPago()" autocomplete="off">
+                </div>
             </div>
-        </div>
 
-        <div id="soloDueno" class="oculto">
-            <button class="acordeon">👥 LISTADO CLIENTES <span>▼</span></button>
-            <div class="panel">Solo visible para Dueño...</div>
-            
-            <button class="acordeon">📉 MAYORES DEUDORES <span>▼</span></button>
-            <div class="panel">Solo visible para Dueño...</div>
-
-            <button class="acordeon" onclick="cargarReceptoresCRUD()">🏦 RECEPTORES (Config) <span>▼</span></button>
-            <div class="panel">
-                <input id="newRecNombre" placeholder="NOMBRE" class="input-login" style="width:40%">
-                <input id="newRecAlias" placeholder="ALIAS" class="input-login" style="width:40%">
-                <button onclick="crearReceptor()">+</button>
-                <div id="listaRecCRUD"></div>
+            <div id="zonaPagos" class="monto-row oculto" style="grid-template-columns: 1fr 1fr 1fr 1fr;">
+                <button class="btn-metodo" onclick="setMet('EFECTIVO', this)">EFVO</button>
+                <button class="btn-metodo" onclick="setMet('TARJETA', this)">TARJ</button>
+                <button class="btn-metodo" onclick="setMet('TRANSFERENCIA', this)">TRANS</button>
+                <button class="btn-metodo" onclick="openSplit()" style="background:#eee;">MIXTO</button>
             </div>
-        </div>
 
+            <div id="boxReceptor" class="receptor-box">
+                <div class="receptor-inner" onclick="openRecSelect()" title="Click para cambiar">
+                    <span id="recNombre">SELECCIONAR RECEPTOR</span><br>
+                    <small id="recInfo">Tope disponible: calculando...</small>
+                </div>
+                <select id="selRec" class="oculto" onchange="selRec()"></select>
+            </div>
+
+            <button id="btnGuardar" class="btn-lg" style="background:var(--verde); margin-top:20px;" onclick="guardar()" disabled>CONFIRMAR VENTA</button>
+        </div>
     </div>
+
+    <button class="acordeon" onclick="toggle('panCaja')">1. CAJA Y CIERRE <span>▼</span></button>
+    <div id="panCaja" class="panel">
+        <div id="cajaUser1" class="oculto">
+            <h3>INGRESO / CIERRE CIEGO</h3>
+            <input id="nomCierre" class="input-lg" placeholder="TU NOMBRE" style="width:90%">
+            <input id="monCierre" class="input-lg" type="tel" placeholder="$ EFECTIVO FÍSICO" style="width:90%" onkeyup="fmt(this)">
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn-lg" style="background:#555; font-size:14px;" onclick="cerrar('PARCIAL')">GUARDADO PARCIAL</button>
+                <button class="btn-lg" style="background:black; font-size:14px;" onclick="cerrar('TOTAL')">CIERRE TOTAL</button>
+            </div>
+        </div>
+
+        <div id="cajaUser2" class="oculto">
+            <div style="background:#eee; padding:10px;">
+                <label>Desde: <input type="date" id="fd"></label> 
+                <label>Hasta: <input type="date" id="fh"></label>
+                <button onclick="loadCaja()">Ver</button>
+            </div>
+            <div id="resumenCaja" style="margin:10px 0; font-weight:bold;"></div>
+        </div>
+
+        <h4 style="margin-bottom:5px;">Últimos Movimientos:</h4>
+        <div id="listaMovs"></div>
+    </div>
+
+    <button class="acordeon" onclick="toggle('panGas')">2. GASTOS OPERATIVOS <span>▼</span></button>
+    <div id="panGas" class="panel">
+        <input id="bGas" class="buscador" placeholder="CONCEPTO (EJ: BOLSAS)..." onkeyup="busGas(this.value)" autocomplete="off">
+        <div id="sugGas" class="sugerencias oculto" style="position:relative;"></div>
+        
+        <div id="formGas" class="oculto" style="border-top:1px solid #ccc; margin-top:10px; padding-top:10px;">
+            <strong id="lblGas"></strong>
+            <input type="tel" id="mGas" class="inp-dinero" placeholder="$ MONTO" onkeyup="fmt(this)" autocomplete="off">
+            <button class="btn-lg" style="background:var(--rojo); margin-top:10px;" onclick="saveGas()">REGISTRAR GASTO</button>
+        </div>
+    </div>
+
+    <div id="modulosDueno" class="oculto">
+        <button class="acordeon">3. CLIENTES (HISTÓRICO) <span>▼</span></button>
+        <div class="panel">Ver Historial Financiero...</div>
+        
+        <button class="acordeon">4. DEUDORES (LA TRAMPA) <span>▼</span></button>
+        <div class="panel">
+            <button>Ordenar Mayor Monto</button> <button>Ordenar Antigüedad</button>
+        </div>
+
+        <button class="acordeon">5. RECEPTORES <span>▼</span></button>
+        <div class="panel">Gestión de Deudas Proveedores...</div>
+
+        <button class="acordeon" style="background:black;">6. ESTADÍSTICAS (VEREDICTO) <span>▼</span></button>
+        <div class="panel">Ganancia Neta Real...</div>
+    </div>
+
+</div>
+
+<div id="modalSplit" class="oculto">
+    <div class="split-content">
+        <h3>PAGO COMBINADO</h3>
+        <label>Efectivo:</label> <input type="tel" id="spEf" class="inp-dinero" onkeyup="fmt(this); sumSplit()">
+        <label>Tarjeta:</label> <input type="tel" id="spTa" class="inp-dinero" onkeyup="fmt(this); sumSplit()">
+        <label>Transf:</label> <input type="tel" id="spTr" class="inp-dinero" onkeyup="fmt(this); sumSplit()">
+        <h3 id="spTot">Total: $0</h3>
+        <button class="btn-lg" onclick="confSplit()">CONFIRMAR</button>
+        <button style="margin-top:10px; color:red; border:none; background:none;" onclick="document.getElementById('modalSplit').classList.add('oculto')">Cancelar</button>
+    </div>
+</div>
 
 <script>
-    // --- VARIABLES ---
-    let ROL = '', USER = '', CLIENTE = null, METODO = '', RECEPTORES = [];
-    
-    // --- LOGIN ---
-    async function login() {
-        const u = document.getElementById('u').value;
-        const c = document.getElementById('c').value;
-        try {
-            const res = await fetch('/api/login', {
-                method:'POST', headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({usuario:u, clave:c})
-            });
-            const data = await res.json();
-            if(data.ok) {
-                ROL = data.rol; USER = data.nombre;
-                iniciar();
-            } else {
-                document.getElementById('errorLogin').classList.remove('oculto');
-            }
-        } catch(e) { alert("Error conexión"); }
-    }
+// --- CORE ---
+let ROL='', USER='', CLIENTE=null, METODO='', RECEPTORES=[], SPLIT={};
 
-    function iniciar() {
-        document.getElementById('pantallaLogin').style.display = 'none';
-        if(ROL === 'DUENO' || ROL === 'DEV') {
-            document.getElementById('modalBackup').classList.remove('oculto');
+// RELOJ
+setInterval(() => {
+    const d = new Date();
+    document.getElementById('clock').innerText = d.toLocaleTimeString();
+}, 1000);
+
+// --- LOGIN ---
+async function login() {
+    const u = document.getElementById('u').value;
+    const c = document.getElementById('c').value;
+    const res = await fetch('/api/login', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({usuario:u, clave:c})
+    });
+    const data = await res.json();
+    if(data.ok) {
+        ROL=data.rol; USER=data.nombre;
+        document.getElementById('loginScreen').style.display='none';
+        
+        if(data.pedirBackup) {
+            document.getElementById('backupModal').classList.remove('oculto');
         } else {
-            entrarApp();
+            start();
         }
-    }
+    } else alert("Datos incorrectos");
+}
 
-    function descargarBackup() {
-        window.open('/api/backup/download');
-        setTimeout(() => {
-            document.getElementById('modalBackup').classList.add('oculto');
-            entrarApp();
-        }, 1500);
-    }
+async function doBackup() {
+    window.open('/api/backup/download');
+    await fetch('/api/backup/confirmar', { method:'POST' });
+    setTimeout(() => {
+        document.getElementById('backupModal').classList.add('oculto');
+        start();
+    }, 2000);
+}
 
-    function entrarApp() {
-        document.getElementById('app').classList.remove('oculto');
-        document.getElementById('lblUsuario').innerText = USER;
-        
-        if(ROL === 'DUENO' || ROL === 'DEV') {
-            document.getElementById('soloDueno').classList.remove('oculto');
-            document.getElementById('filtrosDueno').classList.remove('oculto');
-        }
-        cargarReceptores(); // Cargar lista para memoria
+function start() {
+    document.getElementById('app').classList.remove('oculto');
+    loadRecs();
+    if(ROL === 'EMPLEADO') {
+        document.getElementById('cajaUser1').classList.remove('oculto');
+    } else {
+        document.getElementById('cajaUser2').classList.remove('oculto');
+        document.getElementById('modulosDueno').classList.remove('oculto');
     }
+    loadCaja();
+}
 
-    // --- CLIENTES ---
-    async function buscar(q) {
-        if(q.length < 1) return document.getElementById('sugerencias').classList.add('oculto');
-        const res = await fetch(`/api/sugerencias/${q}`);
-        const data = await res.json();
-        const div = document.getElementById('sugerencias');
-        div.innerHTML = `<div class="item-sug" style="color:blue" onclick="crearCli('${q}')">➕ NUEVO: ${q}</div>`;
-        data.forEach(c => {
-            div.innerHTML += `<div class="item-sug" onclick='selCli(${JSON.stringify(c)})'>${c.nombre} (${c.telefono||'Sin Tel'})</div>`;
+function logout() { location.reload(); }
+
+// --- CLIENTES ---
+async function buscar(q) {
+    if(q.length<1) return document.getElementById('sugerencias').classList.add('oculto');
+    const res = await fetch(`/api/sugerencias/${q}`);
+    const data = await res.json();
+    const div = document.getElementById('sugerencias');
+    div.innerHTML = `<div class="item-sug" style="color:blue" onclick="crearCli('${q}')">➕ NUEVO: ${q}</div>`;
+    data.forEach(c => {
+        div.innerHTML += `<div class="item-sug" onclick='selCli(${JSON.stringify(c)})'>${c.nombre} (${c.telefono||''})</div>`;
+    });
+    div.classList.remove('oculto');
+}
+
+async function crearCli(n) {
+    const res = await fetch('/api/clientes/crear', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nombre:n})});
+    selCli(await res.json());
+}
+
+function selCli(c) {
+    CLIENTE = c;
+    document.getElementById('sugerencias').classList.add('oculto');
+    document.getElementById('buscador').value = '';
+    document.getElementById('ficha').classList.remove('oculto');
+    
+    document.getElementById('cliNombre').innerText = c.nombre;
+    document.getElementById('cliTel').innerText = c.telefono || "Sin Teléfono";
+    
+    const dBox = document.getElementById('cliDeudaBox');
+    if(c.deuda > 0) {
+        dBox.className = "deuda-box bg-rojo";
+        dBox.innerText = `DEUDA HISTÓRICA: $ ${format(c.deuda)}`;
+    } else {
+        dBox.className = "deuda-box bg-verde";
+        dBox.innerText = "AL DÍA ($0)";
+    }
+}
+
+async function editarTel() {
+    const n = prompt("Ingresar nuevo teléfono:", CLIENTE.telefono);
+    if(n) {
+        await fetch('/api/clientes/editar', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({id:CLIENTE._id, telefono:n})
         });
-        div.classList.remove('oculto');
+        document.getElementById('cliTel').innerText = n;
+        CLIENTE.telefono = n;
     }
+}
 
-    async function crearCli(n) {
-        const res = await fetch('/api/clientes/crear', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nombre:n})});
-        selCli(await res.json());
-    }
-
-    function selCli(c) {
-        CLIENTE = c;
-        document.getElementById('sugerencias').classList.add('oculto');
-        document.getElementById('buscador').value = '';
-        document.getElementById('ficha').classList.remove('oculto');
-        
-        document.getElementById('cliNombre').innerText = c.nombre;
-        document.getElementById('cliTel').value = c.telefono; // Editable
-        
-        const bdg = document.getElementById('badgeDeuda');
-        bdg.innerText = "$ " + format(c.deuda);
-        bdg.className = c.deuda > 0 ? 'deuda-badge bg-rojo' : 'deuda-badge bg-verde';
-
-        // Reset
-        document.getElementById('inVenta').value = ''; document.getElementById('inPago').value = '';
+// --- VENTA ---
+function chkPago() {
+    const p = clean(document.getElementById('inPago').value);
+    if(p>0) document.getElementById('zonaPagos').classList.remove('oculto');
+    else {
         document.getElementById('zonaPagos').classList.add('oculto');
+        METODO='';
         document.getElementById('boxReceptor').style.display = 'none';
     }
+    val();
+}
 
-    async function actualizarTel() {
-        if(!CLIENTE) return;
-        const t = document.getElementById('cliTel').value;
-        await fetch('/api/clientes/actualizar-telefono', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({id:CLIENTE._id, telefono:t})
-        });
-    }
-
-    // --- OPERATIVA ---
-    function chkPago() {
-        const p = clean(document.getElementById('inPago').value);
-        if(p > 0) document.getElementById('zonaPagos').classList.remove('oculto');
-        else {
-            document.getElementById('zonaPagos').classList.add('oculto');
-            METODO = '';
-        }
-        val();
-    }
-
-    function setMetodo(m, btn) {
-        METODO = m;
-        document.querySelectorAll('.btn-pago').forEach(b => b.classList.remove('activo'));
-        btn.classList.add('activo');
-        
-        const box = document.getElementById('boxReceptor');
-        if(m === 'TRANSFERENCIA') {
-            box.style.display = 'block';
-            box.classList.add('flash-anim'); // FLASH
-            setTimeout(()=>box.classList.remove('flash-anim'), 1200);
-            
-            // Memoria del último
-            const last = localStorage.getItem('lastRec');
-            if(last) {
-                document.getElementById('selReceptor').value = last;
-                seleccionarReceptor();
-            }
-        } else {
-            box.style.display = 'none';
-        }
-        val();
-    }
-
-    async function cargarReceptores() {
-        const res = await fetch('/api/receptores');
-        RECEPTORES = await res.json();
-        const s = document.getElementById('selReceptor');
-        s.innerHTML = '<option value="">ELEGIR...</option>';
-        RECEPTORES.forEach(r => {
-            s.innerHTML += `<option value="${r._id}">${r.nombre} (${r.alias})</option>`;
-        });
-    }
-
-    function cambiarReceptor() {
-        // Truco para abrir el select oculto (en móviles funciona mejor así)
-        // O simplemente mostrar el select
-        document.getElementById('selReceptor').classList.remove('oculto');
-        document.getElementById('selReceptor').focus();
-    }
-
-    function seleccionarReceptor() {
-        const id = document.getElementById('selReceptor').value;
-        const r = RECEPTORES.find(x => x._id === id);
-        const boxOut = document.getElementById('boxReceptor');
-        const txt = document.getElementById('txtReceptor');
-        
-        if(r) {
-            localStorage.setItem('lastRec', id);
-            txt.innerText = `${r.nombre} (${r.alias})`;
-            document.getElementById('selReceptor').classList.add('oculto');
-            
-            // Semáforo
-            const ratio = r.saldoPorPagar / r.topeMaximo;
-            if(ratio > 0.9) boxOut.style.background = 'var(--rojo)';
-            else if(ratio > 0.5) boxOut.style.background = 'var(--amarillo)';
-            else boxOut.style.background = 'var(--verde)';
-        }
-        val();
-    }
-
-    function verOjo(ver) {
-        const txt = document.getElementById('txtReceptor');
-        if(ver) txt.innerText = "HOY: $ (Calculando...)"; // Aquí iría la llamada real si la tuviéramos
-        else {
-            const id = document.getElementById('selReceptor').value;
-            const r = RECEPTORES.find(x => x._id === id);
-            if(r) txt.innerText = `${r.nombre} (${r.alias})`;
-        }
-    }
-
-    function val() {
-        const v = clean(document.getElementById('inVenta').value);
-        const p = clean(document.getElementById('inPago').value);
-        let ok = false;
-        
-        if(p > 0 && METODO) {
-            if(METODO === 'TRANSFERENCIA') {
-                if(document.getElementById('selReceptor').value) ok = true;
-            } else ok = true;
-        } else if (v > 0 && p === 0) ok = true; // Solo deuda
-        
-        document.getElementById('btnGuardar').disabled = !ok;
-    }
-
-    async function guardarVenta() {
-        const v = clean(document.getElementById('inVenta').value);
-        const p = clean(document.getElementById('inPago').value);
-        const rId = document.getElementById('selReceptor').value;
-        
-        await fetch('/api/operaciones', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({
-                clienteId: CLIENTE._id, compra:v, pago:p, metodo: p>0?METODO:'CUENTA', receptorId: rId
-            })
-        });
-        
-        alert("✅ GUARDADO");
-        document.getElementById('ficha').classList.add('oculto');
-        document.getElementById('buscador').value = '';
-    }
-
-    // --- GASTOS (SMART) ---
-    async function buscarGasto(q) {
-        const div = document.getElementById('sugGastos');
-        if(q.length < 2) return div.classList.add('oculto');
-        
-        const res = await fetch(`/api/gastos/sugerencias/${q}`);
-        const data = await res.json();
-        
-        div.innerHTML = `<div class="item-sug" style="color:blue" onclick="selGasto('${q}')">➕ NUEVO: ${q}</div>`;
-        data.forEach(g => {
-            div.innerHTML += `<div class="item-sug" onclick="selGasto('${g}')">${g}</div>`;
-        });
-        div.classList.remove('oculto');
-    }
-
-    function selGasto(nombre) {
-        document.getElementById('sugGastos').classList.add('oculto');
-        document.getElementById('formGasto').classList.remove('oculto');
-        document.getElementById('lblGasto').innerText = nombre;
-    }
-
-    async function guardarGasto() {
-        const nombre = document.getElementById('lblGasto').innerText;
-        const monto = clean(document.getElementById('montoGasto').value);
-        if(monto <= 0) return alert("Ingrese monto");
-        
-        await fetch('/api/operaciones', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ esGasto: true, detalleGasto: nombre, pago: monto })
-        });
-        alert("GASTO REGISTRADO");
-        document.getElementById('formGasto').classList.add('oculto');
-        document.getElementById('buscaGasto').value = '';
-    }
-
-    // --- CAJA ---
-    async function cargarCaja() {
-        const fD = document.getElementById('fDesde').value;
-        const fH = document.getElementById('fHasta').value;
-        
-        const res = await fetch('/api/caja', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ rol: ROL, fechaDesde: fD, fechaHasta: fH })
-        });
-        const data = await res.json();
-        
-        // Radiografía (Solo Dueño)
-        if(ROL !== 'EMPLEADO') {
-            const t = data.totales;
-            document.getElementById('radiografia').innerHTML = `
-                Venta: $${format(t.totalVenta)} | Efvo: $${format(t.efectivo)}<br>
-                Tarjeta: $${format(t.tarjeta)} | Transf: $${format(t.transf)}<br>
-                Gastos: -$${format(t.gastos)}
-            `;
-        }
-
-        const div = document.getElementById('listaMovimientos');
-        div.innerHTML = '';
-        data.movimientos.forEach(m => {
-            if(m.esCierre) {
-                div.innerHTML += `<div class="fila" style="background:#eee"><b>🔒 CIERRE CAJA</b> <span>$ ${format(m.montoCierre)}</span></div>`;
-                return;
-            }
-            
-            let clase = m.esBorrado ? "fila fila-negra" : "fila";
-            let btn = m.esBorrado ? "" : `<button onclick="borrar('${m._id}')" style="background:red;color:white;border:none;">X</button>`;
-            
-            div.innerHTML += `
-                <div class="${clase}">
-                    <div>
-                        ${m.cliente} (${m.metodo})<br>
-                        <b>$ ${format(m.pago || m.compra)}</b>
-                    </div>
-                    ${btn}
-                </div>
-            `;
-        });
-    }
-
-    async function cerrarCaja() {
-        const m = clean(document.getElementById('montoCierre').value);
-        if(m <= 0 && !confirm("¿Cerrar en cero?")) return;
-        
-        await fetch('/api/cierre-caja', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ monto: m })
-        });
-        alert("✅ CAJA CERRADA CORRECTAMENTE");
-        document.getElementById('montoCierre').value = '';
-        cargarCaja();
-    }
-
-    async function borrar(id) {
-        if(!confirm("¿ANULAR? Se marcará en negro.")) return;
-        await fetch('/api/operaciones/anular', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ idOperacion: id, usuario: USER })
-        });
-        cargarCaja();
-    }
-
-    // --- RECEPTORES CRUD (DUEÑO) ---
-    async function cargarReceptoresCRUD() {
-        await cargarReceptores();
-        const div = document.getElementById('listaRecCRUD');
-        div.innerHTML = '';
-        RECEPTORES.forEach(r => {
-            div.innerHTML += `<div class="fila">${r.nombre} (${r.alias}) <span>Max: $${format(r.topeMaximo)}</span></div>`;
-        });
-    }
-
-    async function crearReceptor() {
-        const n = document.getElementById('newRecNombre').value;
-        const a = document.getElementById('newRecAlias').value;
-        await fetch('/api/receptores', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ nombre:n, alias:a })
-        });
-        cargarReceptoresCRUD();
-    }
-
-    // --- UTILIDADES ---
-    function toggle(id) {
-        document.querySelectorAll('.panel').forEach(p => { if(p.id !== id) p.classList.remove('show'); });
-        document.getElementById(id).classList.toggle('show');
-    }
+function setMet(m, btn) {
+    METODO = m;
+    document.querySelectorAll('.btn-metodo').forEach(b=>b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
     
-    function imprimirPDF() {
-        const doc = new jspdf.jsPDF();
-        doc.text(`ESTADO DE CUENTA: ${CLIENTE.nombre}`, 20, 20);
-        doc.text(`FECHA: ${new Date().toLocaleString()}`, 20, 30);
-        doc.text(`DEUDA TOTAL: $ ${format(CLIENTE.deuda)}`, 20, 40);
-        doc.text("-----------------------------------", 20, 50);
-        doc.save(`Estado_${CLIENTE.nombre}.pdf`);
+    const box = document.getElementById('boxReceptor');
+    if(m === 'TRANSFERENCIA') {
+        box.style.display = 'block';
+        // Memoria Receptor
+        const last = localStorage.getItem('lastRec');
+        if(last) { document.getElementById('selRec').value = last; selRec(); }
+    } else {
+        box.style.display = 'none';
+    }
+    val();
+}
+
+// --- RECEPTOR & SEMÁFORO ---
+async function loadRecs() {
+    const res = await fetch('/api/receptores');
+    RECEPTORES = await res.json();
+    const s = document.getElementById('selRec');
+    s.innerHTML = '<option value="">ELEGIR...</option>';
+    RECEPTORES.forEach(r => s.innerHTML+=`<option value="${r._id}">${r.nombre}</option>`);
+}
+
+function openRecSelect() { document.getElementById('selRec').classList.remove('oculto'); }
+
+function selRec() {
+    const id = document.getElementById('selRec').value;
+    const r = RECEPTORES.find(x=>x._id===id);
+    if(r) {
+        localStorage.setItem('lastRec', id);
+        document.getElementById('recNombre').innerText = r.nombre;
+        document.getElementById('selRec').classList.add('oculto');
+        
+        // Semáforo Lógica
+        const transfMonto = METODO==='MIXTO' ? SPLIT.transferencia : clean(document.getElementById('inPago').value);
+        const deudaFutura = r.saldoPorPagar + transfMonto; // Simplificado (en realidad deuda baja al pagar, pero aquí validamos tope de recepción si aplica)
+        // NOTA: La lógica de receptor suele ser "cuánto le debo".
+        // Si pagamos por transferencia, REDUCIMOS deuda.
+        // Pero Moisés pidió "Bloquear si supera el monto". Asumo se refiere a tope de ingreso diario del receptor.
+        
+        // Mostramos Tooltip
+        document.getElementById('recInfo').innerText = `Tope: $${format(r.topeMaximo)} | Deuda act: $${format(r.saldoPorPagar)}`;
+        
+        // Línea verde ancha (Visual)
+        document.getElementById('boxReceptor').style.borderBottom = "5px solid #00c853";
+    }
+}
+
+// --- MIXTO ---
+function openSplit() {
+    document.getElementById('modalSplit').classList.remove('oculto');
+    METODO = 'MIXTO';
+}
+function sumSplit() {
+    const e = clean(document.getElementById('spEf').value);
+    const t = clean(document.getElementById('spTa').value);
+    const r = clean(document.getElementById('spTr').value);
+    document.getElementById('spTot').innerText = "Total: $" + format(e+t+r);
+}
+function confSplit() {
+    const e = clean(document.getElementById('spEf').value);
+    const t = clean(document.getElementById('spTa').value);
+    const r = clean(document.getElementById('spTr').value);
+    const total = clean(document.getElementById('inPago').value);
+    
+    if(e+t+r !== total) return alert("La suma no coincide con el monto ABONA");
+    
+    SPLIT = { efectivo: e, tarjeta: t, transferencia: r };
+    document.getElementById('modalSplit').classList.add('oculto');
+    
+    if(r > 0) {
+        document.getElementById('boxReceptor').style.display='block';
+    } else {
+        document.getElementById('boxReceptor').style.display='none';
+    }
+    val();
+}
+
+function val() {
+    const v = clean(document.getElementById('inCompra').value);
+    const p = clean(document.getElementById('inPago').value);
+    let ok = false;
+    
+    if(p>0 && METODO) {
+        if(METODO === 'TRANSFERENCIA' && !document.getElementById('selRec').value) ok=false;
+        else if(METODO === 'MIXTO' && SPLIT.transferencia > 0 && !document.getElementById('selRec').value) ok=false;
+        else ok=true;
+    } else if (v>0 && p===0) ok=true; // Deuda total
+    
+    document.getElementById('btnGuardar').disabled = !ok;
+}
+
+async function guardar() {
+    const compra = clean(document.getElementById('inCompra').value);
+    const pago = clean(document.getElementById('inPago').value);
+    
+    let body = {
+        clienteId: CLIENTE._id, compra, pago, metodo: METODO,
+        efectivo: 0, tarjeta: 0, transferencia: 0, receptorId: document.getElementById('selRec').value
+    };
+
+    if(METODO === 'MIXTO') {
+        body.efectivo = SPLIT.efectivo;
+        body.tarjeta = SPLIT.tarjeta;
+        body.transferencia = SPLIT.transferencia;
+    } else if(METODO === 'EFECTIVO') body.efectivo = pago;
+    else if(METODO === 'TARJETA') body.tarjeta = pago;
+    else if(METODO === 'TRANSFERENCIA') body.transferencia = pago;
+
+    // Validación Semáforo Receptor (Bloqueo)
+    if(body.transferencia > 0 && body.receptorId) {
+        const rec = RECEPTORES.find(r => r._id === body.receptorId);
+        // Si Moisés quiere bloquear cuando se envía más del tope:
+        if(body.transferencia > rec.topeMaximo) {
+            alert("⛔ BLOQUEO: Supera el monto permitido del receptor.");
+            document.getElementById('boxReceptor').classList.add('blocked');
+            return;
+        }
     }
 
-    function fmt(i) { i.value = format(clean(i.value)); }
-    function clean(v) { return parseInt(v.toString().replace(/\D/g,''))||0; }
-    function format(v) { return new Intl.NumberFormat('es-AR').format(v); }
+    await fetch('/api/operaciones', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    alert("✅ VENTA CORRECTA");
+    location.reload(); // Recarga limpia para User 1
+}
+
+// --- GASTOS (Limpieza Automática) ---
+async function busGas(q) {
+    if(q.length<2) return document.getElementById('sugGas').classList.add('oculto');
+    const res = await fetch(`/api/gastos/sugerencias/${q}`);
+    const data = await res.json();
+    const div = document.getElementById('sugGas');
+    div.innerHTML = `<div class="item-sug" style="color:blue" onclick="selGas('${q}')">➕ NUEVO: ${q}</div>`;
+    data.forEach(g => div.innerHTML+=`<div class="item-sug" onclick="selGas('${g}')">${g}</div>`);
+    div.classList.remove('oculto');
+}
+function selGas(n) {
+    document.getElementById('sugGas').classList.add('oculto');
+    document.getElementById('formGas').classList.remove('oculto');
+    document.getElementById('lblGas').innerText = n;
+    document.getElementById('mGas').value = ''; // Limpieza Automática
+    document.getElementById('mGas').focus();
+}
+async function saveGas() {
+    const n = document.getElementById('lblGas').innerText;
+    const m = clean(document.getElementById('mGas').value);
+    if(m<=0) return;
+    await fetch('/api/operaciones', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({esGasto:true, detalleGasto:n, pago:m})
+    });
+    alert("GASTO GUARDADO");
+    document.getElementById('formGas').classList.add('oculto');
+    document.getElementById('bGas').value = '';
+    loadCaja();
+}
+
+// --- CAJA & CIERRE ---
+async function loadCaja() {
+    const fd = document.getElementById('fd').value;
+    const fh = document.getElementById('fh').value;
+    const res = await fetch('/api/caja', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({rol:ROL, fechaDesde:fd, fechaHasta:fh})
+    });
+    const data = await res.json();
+    
+    // U2 Resumen
+    if(ROL !== 'EMPLEADO') {
+        const t = data.totales;
+        let colorDif = t.diferencia < 0 ? 'red' : 'green';
+        document.getElementById('resumenCaja').innerHTML = `
+            Efvo Sistema: $${format(t.efectivoReal)} <br>
+            Guardado Decl: $${format(t.guardadoDeclarado)} <br>
+            <span style="color:${colorDif}">Diferencia: $${format(t.diferencia)}</span>
+        `;
+    }
+
+    const div = document.getElementById('listaMovs');
+    div.innerHTML = '';
+    data.movimientos.forEach(m => {
+        let estilo = m.esBorrado ? "fila-audit fila-negra" : "fila-audit";
+        let extra = '';
+        if(ROL !== 'EMPLEADO') {
+            extra = m.esBorrado ? `<small>Borrado por: ${m.usuarioBorrado}</small>` : 
+                    `<i class="fa fa-trash" style="color:red; cursor:pointer" onclick="del(${m._id})"></i>`;
+        }
+        
+        // Censura U1 (Solo Ventas)
+        if(ROL === 'EMPLEADO') {
+            div.innerHTML += `
+                <div class="${estilo}">
+                    <span>${m.cliente} (${m.metodo||'MIXTO'})</span>
+                    <b>$${format(m.pago)}</b>
+                </div>`;
+        } else {
+            // Full U2
+            div.innerHTML += `
+                <div class="${estilo}">
+                    <span>
+                        ${new Date(m.fecha).toLocaleTimeString()} - ${m.cliente}<br>
+                        <small>${m.esGasto ? 'GASTO' : 'VENTA'}</small>
+                    </span>
+                    <div style="text-align:right">
+                        <b>$${format(m.pago || m.montoCierre)}</b><br>
+                        ${extra}
+                    </div>
+                </div>`;
+        }
+    });
+}
+
+async function cerrar(tipo) {
+    const nom = document.getElementById('nomCierre').value;
+    const mon = clean(document.getElementById('monCierre').value);
+    if(!nom || mon<=0) return alert("Completar Nombre y Monto");
+    
+    await fetch('/api/cierre-caja', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({tipo, monto:mon, usuario:nom})
+    });
+    alert("✅ " + tipo + " REALIZADO");
+    location.reload();
+}
+
+async function del(id) {
+    if(!confirm("¿ANULAR? Quedará registro.")) return;
+    await fetch('/api/anular', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id, usuario:USER})
+    });
+    loadCaja();
+}
+
+function toggle(id) { document.getElementById(id).classList.toggle('show'); }
+function fmt(i) { i.value = format(clean(i.value)); }
+function clean(v) { return parseInt(v.toString().replace(/\D/g,''))||0; }
+function format(v) { return new Intl.NumberFormat('es-AR').format(v); }
 
 </script>
 </body>
