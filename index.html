@@ -357,3 +357,23 @@
     </script>
 </body>
 </html>
+<button class="btn-acordeon" onclick="cargarDeudores(); toggleAcordeon('panelDeudores')">📉 MAYORES DEUDORES (La Trampa) <span>▼</span></button>
+<div id="panelDeudores" class="panel-sotano">
+    <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <button onclick="ordenarDeudores('monto')" style="flex:1; padding:10px; background:#455a64; color:white; border:none;">ORDENAR POR MONTO</button>
+        <button onclick="ordenarDeudores('antiguedad')" style="flex:1; padding:10px; background:#455a64; color:white; border:none;">ORDENAR POR ANTIGÜEDAD</button>
+    </div>
+    
+    <div id="listaDeudores" style="width:100%;">
+        <table style="width:100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background:#eee;">
+                    <th style="padding:10px; text-align:left;">CLIENTE</th>
+                    <th style="padding:10px; text-align:right;">DEUDA</th>
+                    <th style="padding:10px; text-align:center;">ANTIGÜEDAD</th>
+                </tr>
+            </thead>
+            <tbody id="tablaDeudoresBody"></tbody>
+        </table>
+    </div>
+</div>
