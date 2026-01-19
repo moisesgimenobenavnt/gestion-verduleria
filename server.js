@@ -1,277 +1,221 @@
-require('dotenv').config();
+// ================================================================
+// SERVIDOR "VISIÓN MOISÉS V5" - BACKEND BLINDADO
+// PUERTO: 3001 (Configurado para evitar choques)
+// ================================================================
+
+// 1. CARGA DE MÓDULOS (HERRAMIENTAS)
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const path = require('path');
+const bodyParser = require('body-parser');
 
+// 2. CONFIGURACIÓN DEL SERVIDOR
 const app = express();
-app.use(express.json());
-app.use(cors());
+const PORT = 3001; // <--- AQUÍ ESTÁ EL CAMBIO IMPORTANTE
 
-// --- CONEXIÓN ---
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/verduleria_vision_moises_pro';
-mongoose.connect(MONGO_URI)
-    .then(() => console.log("✅ SERVIDOR PRO ACTIVADO"))
-    .catch(err => console.error("❌ ERROR BD:", err));
+// Middleware (Permisos de seguridad)
+app.use(cors()); // Permite que el HTML (tu cara) hable con el Servidor (tu cerebro)
+app.use(bodyParser.json()); // Permite recibir datos complejos
 
-// --- MODELOS ---
-const Config = mongoose.model('Config', new mongoose.Schema({
-    clave: { type: String, unique: true }, 
-    valor: String 
-}));
+// 3. CONEXIÓN A LA BASE DE DATOS (HONGO DB)
+// IMPORTANTE: Si subes esto a la nube (Render/Glitch), deberás cambiar esta línea
+// por la dirección de tu MongoDB Atlas (Nube). Por ahora, lo dejo en Local para tus pruebas.
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/verduleria_vision_moises';
 
-const Cliente = mongoose.model('Cliente', new mongoose.Schema({ 
-    nombre: { type: String, uppercase: true }, 
-    telefono: { type: String, default: "" }, 
-    deuda: { type: Number, default: 0 } 
-}));
-
-const Receptor = mongoose.model('Receptor', new mongoose.Schema({ 
-    nombre: { type: String, uppercase: true, unique: true }, 
-    alias: { type: String, uppercase: true, default: "CUENTA" },
-    saldoPorPagar: { type: Number, default: 0 }, 
-    topeMaximo: { type: Number, default: 1000000 }
-}));
-
-const Operacion = mongoose.model('Operacion', new mongoose.Schema({ 
-    cliente: { type: String, uppercase: true }, 
-    compra: Number, 
-    pago: Number, 
-    
-    // Desglose Pagos
-    pagoEfectivo: { type: Number, default: 0 },
-    pagoTarjeta: { type: Number, default: 0 },
-    pagoTransferencia: { type: Number, default: 0 },
-    
-    metodo: String, 
-    destino: { type: String, uppercase: true }, 
-    
-    fecha: { type: Date, default: Date.now },
-    
-    esGasto: { type: Boolean, default: false },
-    detalleGasto: { type: String, uppercase: true },
-    
-    esBorrado: { type: Boolean, default: false }, 
-    fechaBorrado: Date,
-    usuarioBorrado: String,
-    
-    esCierre: { type: Boolean, default: false }, 
-    tipoCierre: String, 
-    montoCierre: Number,
-    usuarioCierre: String // AQUÍ SE GUARDA QUIÉN GUARDÓ LA PLATA
-}));
-
-// --- LOGIN ---
-app.post('/api/login', async (req, res) => {
-    const { usuario, clave } = req.body;
-    const u = usuario.toUpperCase().trim();
-    
-    let pedirBackup = false;
-    // Lógica Backup Diario para Admin
-    if (u === 'ADMIN') {
-        const hoy = new Date().toLocaleDateString();
-        const conf = await Config.findOne({ clave: 'ULTIMO_BACKUP' });
-        if (!conf || conf.valor !== hoy) pedirBackup = true;
-    }
-
-    if (u === 'LOCAL' && clave === '1234') return res.json({ ok: true, rol: 'EMPLEADO', nombre: 'VENDEDOR' });
-    if (u === 'ADMIN' && clave === 'DUENO2026') return res.json({ ok: true, rol: 'DUENO', nombre: 'ADMINISTRADOR', pedirBackup });
-    if (u === 'MOISES' && clave === 'MASTERKEY') return res.json({ ok: true, rol: 'DEV', nombre: 'SOPORTE TÉCNICO' });
-
-    res.status(401).json({ ok: false });
+mongoose.connect(MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => {
+    console.log("--------------------------------------------------");
+    console.log("✅ CONEXIÓN EXITOSA AL HONGO DB (PERSISTENCIA ACTIVADA)");
+    console.log("💾 SISTEMA DE SEGURIDAD: ONLINE");
+    console.log("--------------------------------------------------");
+})
+.catch(err => {
+    console.error("❌ ERROR CRÍTICO: NO SE DETECTA LA BASE DE DATOS.");
+    console.error(err);
 });
 
-app.post('/api/backup/confirmar', async (req, res) => {
-    const hoy = new Date().toLocaleDateString();
-    await Config.findOneAndUpdate({ clave: 'ULTIMO_BACKUP' }, { valor: hoy }, { upsert: true });
-    res.json({ ok: true });
-});
+// ================================================================
+// 4. ESQUEMAS DE SEGURIDAD (HUELLA FORENSE)
+// ================================================================
 
-// --- OPERATIVA ---
-app.get('/api/sugerencias/:query', async (req, res) => {
-    const q = req.params.query;
-    if(!q) return res.json([]);
-    const regex = new RegExp(q, 'i');
-    const clientes = await Cliente.find({ $or: [{nombre: regex}, {telefono: regex}] }).limit(10).sort({nombre:1});
-    res.json(clientes);
-});
-
-app.post('/api/clientes/crear', async (req, res) => {
-    const { nombre } = req.body;
-    let c = await Cliente.findOne({ nombre: nombre.toUpperCase() });
-    if (!c) c = await Cliente.create({ nombre: nombre.toUpperCase(), telefono: "" });
-    res.json(c);
-});
-
-app.post('/api/clientes/editar', async (req, res) => {
-    const { id, telefono } = req.body;
-    await Cliente.findByIdAndUpdate(id, { telefono });
-    res.json({ ok: true });
-});
-
-app.post('/api/operaciones', async (req, res) => {
-    const body = req.body;
+// A. ESQUEMA DE MOVIMIENTOS (Historial inborrable)
+const MovimientoSchema = new mongoose.Schema({
+    tipo: { type: String, required: true }, // VENTA, GASTO, RETIRO, CIERRE
+    monto: { type: Number, required: true },
     
-    // GASTO
-    if (body.esGasto) {
-        await new Operacion({
-            cliente: "GASTO OPERATIVO",
-            compra: 0, pago: body.pago, metodo: 'EFECTIVO',
-            esGasto: true, detalleGasto: body.detalleGasto.toUpperCase()
-        }).save();
-        return res.json({ ok: true });
-    }
-
-    // VENTA
-    const cli = await Cliente.findById(body.clienteId);
-    if (!cli) return res.status(404).json({error: "Cliente no existe"});
-
-    // Cálculo Deuda
-    const totalPagado = body.efectivo + body.tarjeta + body.transferencia;
-    const saldoOperacion = body.compra - totalPagado;
-    cli.deuda += saldoOperacion; 
-    await cli.save();
-
-    // Proveedor
-    let nombreDestino = "";
-    if (body.transferencia > 0 && body.receptorId) {
-        const rec = await Receptor.findById(body.receptorId);
-        if (rec) {
-            rec.saldoPorPagar -= body.transferencia;
-            if(rec.saldoPorPagar < 0) rec.saldoPorPagar = 0;
-            await rec.save();
-            nombreDestino = rec.nombre;
-        }
-    }
-
-    await new Operacion({
-        cliente: cli.nombre,
-        compra: body.compra,
-        pago: totalPagado,
-        pagoEfectivo: body.efectivo,
-        pagoTarjeta: body.tarjeta,
-        pagoTransferencia: body.transferencia,
-        metodo: body.metodo,
-        destino: nombreDestino
-    }).save();
-
-    res.json({ ok: true });
+    // Auditoría de Seguridad (Quién y Cuándo)
+    usuarioRegistra: { type: String, required: true }, // Ej: VENDEDOR
+    responsableFisico: { type: String, default: "-" }, // Ej: JUAN
+    
+    // Datos Operativos
+    cliente: { type: String, default: "-" },
+    pagoReal: { type: Number, default: 0 }, // Efectivo real en caja
+    destinoFondos: { type: String, default: "CAJA" }, // CAJA, BANCO, ETC.
+    
+    // Sellos de Tiempo (String para visualización, Date para orden)
+    fecha: { type: String }, 
+    hora: { type: String },
+    timestamp: { type: Date, default: Date.now }
 });
 
-// --- CAJA (CORREGIDO DESGLOSE ADMIN) ---
-app.post('/api/caja', async (req, res) => {
-    const { rol, fechaDesde, fechaHasta } = req.body;
+// B. ESQUEMA DE CLIENTES (Gestión de Deuda)
+const ClienteSchema = new mongoose.Schema({
+    nombre: { type: String, required: true, unique: true, uppercase: true },
+    telefono: { type: String, default: "" },
+    deudaActual: { type: Number, default: 0 }, // SALDO ROJO
+    ultimaActualizacion: { type: Date, default: Date.now },
+    historial: [Object] // Rastro de cambios
+});
 
-    let inicio = new Date(); inicio.setHours(0,0,0,0);
-    let fin = new Date(); fin.setHours(23,59,59,999);
+// Modelos
+const Movimiento = mongoose.model('Movimiento', MovimientoSchema);
+const Cliente = mongoose.model('Cliente', ClienteSchema);
 
-    if (rol !== 'EMPLEADO' && fechaDesde && fechaHasta) {
-        inicio = new Date(fechaDesde);
-        fin = new Date(fechaHasta); fin.setHours(23,59,59,999);
-    }
+// ================================================================
+// 5. RUTAS DE LA API (CONEXIÓN CON HTML)
+// ================================================================
 
-    const ops = await Operacion.find({ fecha: { $gte: inicio, $lte: fin } }).sort({ fecha: -1 });
-
-    let tVenta=0, tEfvo=0, tTarjeta=0, tTransf=0, tGastos=0, tRetiros=0;
-
-    const movimientos = ops.map(o => {
-        if (!o.esBorrado) {
-            if (o.esCierre) {
-                 tRetiros += o.montoCierre;
-            } else if (o.esGasto) {
-                tGastos += o.pago;
-                tEfvo -= o.pago; // Resta del efectivo
-            } else {
-                tVenta += o.compra;
-                tEfvo += o.pagoEfectivo;
-                tTarjeta += o.pagoTarjeta;
-                tTransf += o.pagoTransferencia;
-            }
-        }
+// --- RUTA 1: GUARDAR MOVIMIENTOS (Seguridad Máxima) ---
+app.post('/api/movimientos', async (req, res) => {
+    try {
+        const nuevoMov = new Movimiento(req.body);
+        await nuevoMov.save(); // <--- AQUÍ SE GRABA EN EL DISCO DURO
         
-        // EMPLEADO: SOLO VE VENTAS (10 ULTIMAS)
-        if (rol === 'EMPLEADO') {
-            if (o.esGasto || o.esCierre) return null; 
-            return {
-                _id: o._id, fecha: o.fecha,
-                cliente: o.cliente,
-                pago: o.pago,
-                esBorrado: o.esBorrado
-            };
-        }
-        // ADMIN: VE TODO
-        return o; 
-    }).filter(x => x !== null);
-
-    if (rol === 'EMPLEADO') {
-        res.json({
-            totales: null,
-            movimientos: movimientos.slice(0, 10)
-        });
-    } else {
-        // ADMIN RECIBE TODOS LOS TOTALES
-        res.json({
-            totales: { 
-                venta: tVenta, 
-                efectivoReal: tEfvo, 
-                tarjeta: tTarjeta, 
-                transf: tTransf, 
-                gastos: tGastos, 
-                guardadoDeclarado: tRetiros,
-                diferencia: tRetiros - tEfvo
-            },
-            movimientos: movimientos
-        });
+        console.log(`📝 [${nuevoMov.fecha} ${nuevoMov.hora}] GUARDADO: ${nuevoMov.tipo} $${nuevoMov.monto}`);
+        res.json({ ok: true, mensaje: "GUARDADO EN DB" });
+    } catch (error) {
+        console.error("Error al guardar:", error);
+        res.status(500).json({ ok: false, error: "Fallo de escritura en disco" });
     }
 });
 
-// CIERRE CAJA (GUARDANDO USUARIO)
-app.post('/api/cierre-caja', async (req, res) => {
-    const { tipo, monto, usuario } = req.body;
-    await new Operacion({
-        cliente: tipo === 'TOTAL' ? "CIERRE TOTAL CAJA" : "GUARDADO PARCIAL",
-        compra: 0, pago: 0, metodo: 'SISTEMA',
-        esCierre: true, tipoCierre: tipo, montoCierre: monto, 
-        usuarioCierre: usuario // GUARDAMOS EL NOMBRE
-    }).save();
-    res.json({ ok: true });
+// --- RUTA 2: LEER HISTORIAL (Para Auditoría U2) ---
+app.get('/api/movimientos', async (req, res) => {
+    try {
+        // Devuelve los últimos 300 movimientos para auditoría rápida
+        const lista = await Movimiento.find().sort({ timestamp: -1 }).limit(300);
+        res.json(lista);
+    } catch (error) {
+        res.status(500).json({ ok: false, error: "Error de lectura" });
+    }
 });
 
-app.post('/api/anular', async (req, res) => {
-    const { id, usuario } = req.body;
-    await Operacion.findByIdAndUpdate(id, { 
-        esBorrado: true, fechaBorrado: new Date(), usuarioBorrado: usuario 
-    });
-    res.json({ ok: true });
-});
-
-// GASTOS (CORREGIDO PARA CREAR SI NO EXISTE)
-app.get('/api/gastos/sugerencias/:query', async (req, res) => {
+// --- RUTA 3: CLIENTES (Buscador Predictivo) ---
+app.get('/api/clientes/:query', async (req, res) => {
     const q = req.params.query;
-    const regex = new RegExp(q, 'i');
-    const gastos = await Operacion.find({ esGasto: true, detalleGasto: regex }).distinct('detalleGasto');
-    res.json(gastos.slice(0, 5));
+    try {
+        const resultados = await Cliente.find({ 
+            nombre: { $regex: q, $options: 'i' } 
+        }).limit(10);
+        res.json(resultados);
+    } catch (error) {
+        res.status(500).json([]);
+    }
 });
 
-// RECEPTORES
-app.get('/api/receptores', async (req, res) => {
-    const list = await Receptor.find().sort({nombre: 1});
-    res.json(list);
-});
-app.post('/api/receptores', async (req, res) => {
-    const { nombre, alias } = req.body;
-    await new Receptor({ nombre: nombre.toUpperCase(), alias: alias.toUpperCase() }).save();
-    res.json({ ok: true });
-});
-
-app.get('/api/backup/download', (req, res) => {
-    const data = "BACKUP_" + Date.now();
-    res.setHeader('Content-disposition', 'attachment; filename=BACKUP.enc');
-    res.send(Buffer.from(data).toString('base64'));
+// --- RUTA 4: LISTAR DEUDORES (Ranking Morosos) ---
+app.get('/api/clientes', async (req, res) => {
+    try {
+        const todos = await Cliente.find();
+        res.json(todos);
+    } catch (error) {
+        res.status(500).json([]);
+    }
 });
 
-// Server
-app.use(express.static(__dirname));
-app.get('*', (req, res) => res.sendFile(path.resolve(__dirname, 'index.html')));
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 SERVIDOR PRO CORRIENDO EN PUERTO ${PORT}`));
+// --- RUTA 5: ACTUALIZAR DEUDA (Gestión Financiera) ---
+app.post('/api/clientes', async (req, res) => {
+    const { nombre, deuda, telefono } = req.body;
+    try {
+        let cliente = await Cliente.findOne({ nombre: nombre });
+        
+        if (cliente) {
+            // Actualizar existente
+            cliente.deudaActual = deuda; 
+            if(telefono) cliente.telefono = telefono;
+            cliente.ultimaActualizacion = new Date();
+            
+            // Historial interno del cliente
+            cliente.historial.push({
+                fecha: new Date().toLocaleString(),
+                saldo: deuda,
+                accion: "ACTUALIZACIÓN SISTEMA"
+            });
+            await cliente.save();
+        } else {
+            // Crear nuevo
+            cliente = new Cliente({ 
+                nombre, 
+                telefono, 
+                deudaActual: deuda,
+                historial: [{
+                    fecha: new Date().toLocaleString(),
+                    saldo: deuda,
+                    accion: "ALTA CLIENTE"
+                }]
+            });
+            await cliente.save();
+        }
+        res.json({ ok: true, cliente });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// --- RUTA 6: EL VEREDICTO (Cálculo Matemático Servidor) ---
+app.post('/api/veredicto', async (req, res) => {
+    try {
+        const movimientos = await Movimiento.find();
+        
+        let ventas = 0;
+        let gastos = 0;
+        let retiros = 0;
+        let cajaFisica = 0;
+
+        movimientos.forEach(m => {
+            // 1. Sumar Ventas
+            if(m.tipo === "VENTA") {
+                ventas += m.monto;
+                if(m.destinoFondos === "CAJA") cajaFisica += (m.pagoReal || 0);
+            }
+            // 2. Restar Gastos
+            if(m.tipo === "GASTO") {
+                gastos += m.monto;
+                cajaFisica -= m.monto;
+            }
+            // 3. Controlar Retiros
+            if(m.tipo.includes("RETIRO") || m.tipo.includes("CIERRE")) {
+                retiros += m.monto;
+                cajaFisica -= m.monto;
+            }
+        });
+
+        const gananciaNeta = ventas - gastos;
+
+        res.json({
+            gananciaNeta: gananciaNeta,
+            ventas: ventas,
+            gastos: gastos,
+            diferenciaCaja: cajaFisica
+        });
+
+    } catch (error) {
+        res.status(500).json({ error: "Error de cálculo" });
+    }
+});
+
+// ================================================================
+// 6. ENCENDIDO DEL SISTEMA
+// ================================================================
+app.listen(PORT, () => {
+    console.log(" ");
+    console.log("██████████████████████████████████████████████████");
+    console.log("█  SISTEMA VISIÓN MOISÉS V5 - ALTA SEGURIDAD     █");
+    console.log(`█  PUERTO ACTIVO: ${PORT}                           █`);
+    console.log("█  ESTADO: ESPERANDO ÓRDENES DEL HTML...         █");
+    console.log("██████████████████████████████████████████████████");
+    console.log(" ");
+});
