@@ -1,140 +1,103 @@
 // =============================================================================
 // █ NOMBRE DEL SISTEMA: VISIÓN MOISÉS V5
-// █ TIPO DE ARCHIVO: SERVER.JS (CEREBRO DEL SISTEMA)
-// █ ENTORNO: NUBE (MONGODB ATLAS) + DEPLOY
+// █ ARCHIVO: SERVER.JS (CEREBRO DEL SISTEMA - VERSIÓN ROBUSTA)
+// █ ESTADO: CORREGIDO Y VERIFICADO
 // =============================================================================
 
-// -----------------------------------------------------------------------------
-// 1. IMPORTACIÓN DE LIBRERÍAS (LOS CIMIENTOS)
-// -----------------------------------------------------------------------------
-const express = require('express');       // El motor del servidor web
-const mongoose = require('mongoose');     // La herramienta para hablar con la Base de Datos
-const cors = require('cors');             // Permisos de seguridad para el navegador
-const bodyParser = require('body-parser'); // Para leer los datos que envía el HTML
-const path = require('path');             // IMPORTANTE: Para encontrar el archivo index.html en la nube
+// 1. IMPORTACIÓN DE LIBRERÍAS
+const express = require('express');       // El motor del servidor
+const mongoose = require('mongoose');     // Conexión a Base de Datos (Atlas)
+const cors = require('cors');             // Permisos de seguridad
+const path = require('path');             // Manejo de rutas de carpetas
 
-// -----------------------------------------------------------------------------
-// 2. CONFIGURACIÓN DEL SERVIDOR Y PUERTO
-// -----------------------------------------------------------------------------
+// 2. CONFIGURACIÓN INICIAL
 const app = express();
+const PORT = process.env.PORT || 3001;
 
-// IMPORTANTE: La nube (Render/Glitch) nos asigna un puerto aleatorio en 'process.env.PORT'.
-// Si no nos da uno (estamos en casa), usamos el 3001.
-const PORT = process.env.PORT || 3001; 
+// 3. MIDDLEWARE (CAPAS DE SEGURIDAD)
+app.use(cors());
+app.use(express.json()); // Configuración moderna para leer JSON
+app.use(express.static(__dirname)); // Servir los archivos de la carpeta actual
 
-// -----------------------------------------------------------------------------
-// 3. MIDDLEWARE (CAPAS DE SEGURIDAD Y TRADUCCIÓN)
-// -----------------------------------------------------------------------------
-app.use(cors()); // Permitir el paso de datos
-app.use(bodyParser.json()); // Entender formato JSON
-
-// --- CONFIGURACIÓN CRÍTICA PARA QUE LA PÁGINA SE VEA ---
-// Esto le dice al servidor: "La carpeta actual contiene los archivos de la web".
-app.use(express.static(__dirname));
-
-// Cuando alguien entre a la página principal ('/'), envíale el archivo index.html
+// RUTA PRINCIPAL (Carga la pantalla visual)
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // -----------------------------------------------------------------------------
-// 4. CONEXIÓN A LA BASE DE DATOS (EL HONGO EN LA NUBE)
-// -----------------------------------------------------------------------------
-// Esta es tu dirección secreta de MongoDB Atlas.
+// 4. CONEXIÓN A LA NUBE (MONGODB ATLAS)
+// ----------------------------------------------------------
 const uri = "mongodb+srv://moises-verduleria:MOISESsandra2042@mibazarimpecable.qhhyri1.mongodb.net/verduleria_db?retryWrites=true&w=majority&appName=MIBAZARIMPECABLE";
 
-console.log(" ");
-console.log("📡 INICIANDO SISTEMA VISIÓN MOISÉS...");
-console.log("📡 INTENTANDO CONECTAR A LA NUBE (ATLAS)...");
+console.log("📡 INICIANDO PROTOCOLO DE CONEXIÓN...");
 
-mongoose.connect(uri, {
-    // Estas opciones mantienen la conexión estable si el internet parpadea
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000,
-})
+mongoose.connect(uri)
 .then(() => {
-    console.log("--------------------------------------------------");
-    console.log("✅ ¡CONEXIÓN EXITOSA A LA NUBE!");
-    console.log("💾 BASE DE DATOS: 'mibazarimpecable' ONLINE");
-    console.log("🔒 ESTADO: ENCRIPTADO Y GUARDANDO DATOS");
-    console.log("--------------------------------------------------");
+    console.log("==========================================");
+    console.log("✅ CONEXIÓN EXITOSA A LA NUBE (ATLAS)");
+    console.log("💾 BASE DE DATOS 'mibazarimpecable' ONLINE");
+    console.log("==========================================");
 })
 .catch(err => {
-    console.error("❌ ERROR CRÍTICO DE CONEXIÓN:");
-    console.error("   El servidor no pudo alcanzar la nube de MongoDB.");
-    console.error("   Detalle técnico:", err);
+    console.error("❌ ERROR CRÍTICO DE CONEXIÓN:", err.message);
 });
 
 // -----------------------------------------------------------------------------
-// 5. ESQUEMAS DE SEGURIDAD (LAS CAJAS FUERTES DE DATOS)
+// 5. ESQUEMAS DE SEGURIDAD (MODELOS DE DATOS)
 // -----------------------------------------------------------------------------
 
-// A. ESQUEMA DE MOVIMIENTOS (HUELLA FORENSE)
-// Guarda absolutamente todo lo que pasa por la caja.
+// A. ESQUEMA DE MOVIMIENTOS (Caja, Ventas y Auditoría)
 const MovimientoSchema = new mongoose.Schema({
-    // Tipo: VENTA, GASTO, RETIRO PARCIAL, CIERRE FINAL
-    tipo: { type: String, required: true },
-    
-    // Monto: El dinero involucrado
+    tipo: { type: String, required: true }, // VENTA, GASTO, RETIRO...
     monto: { type: Number, required: true },
     
-    // HUELLA FORENSE: Quién estaba logueado
-    usuarioRegistra: { type: String, required: true },
-    
-    // HUELLA FORENSE: Quién manipuló el dinero físico
+    // HUELLA FORENSE
+    usuarioRegistra: { type: String, required: true }, 
     responsableFisico: { type: String, default: "-" },
     
-    // Datos opcionales de ventas
+    // DATOS DE OPERACIÓN
     cliente: { type: String, default: "-" },
-    pagoReal: { type: Number, default: 0 },
-    destinoFondos: { type: String, default: "CAJA" }, // CAJA, BANCO, ETC
+    pagoReal: { type: Number, default: 0 }, // Lo que entra en efectivo/banco
+    destinoFondos: { type: String, default: "CAJA" }, // CAJA, MP, BCO
     
-    // Fecha y Hora (Strings para mantener formato visual)
+    // FECHAS (Texto para visualización y Date para ordenamiento)
     fecha: { type: String }, 
     hora: { type: String },
-    
-    // Fecha real para ordenamiento en base de datos
-    timestamp: { type: Date, default: Date.now }
+    timestamp: { type: Date, default: Date.now } 
 });
 
-// B. ESQUEMA DE CLIENTES (CUENTAS CORRIENTES)
-// Gestiona las deudas y los fiados.
+// B. ESQUEMA DE CLIENTES (Cuentas Corrientes)
 const ClienteSchema = new mongoose.Schema({
     nombre: { type: String, required: true, unique: true, uppercase: true },
     telefono: { type: String, default: "" },
-    deudaActual: { type: Number, default: 0 }, // SALDO EN ROJO
-    ultimaActualizacion: { type: Date, default: Date.now },
-    historial: [Object] // Lista de cambios de deuda
+    deudaActual: { type: Number, default: 0 }, // Saldo en Rojo
+    ultimaActualizacion: { type: Date, default: Date.now }
 });
 
-// CREACIÓN DE LOS MODELOS
+// CREACIÓN DE MODELOS
 const Movimiento = mongoose.model('Movimiento', MovimientoSchema);
 const Cliente = mongoose.model('Cliente', ClienteSchema);
 
 // -----------------------------------------------------------------------------
-// 6. RUTAS DE LA API (LOS CABLES QUE CONECTAN CON EL HTML)
+// 6. RUTAS DE LA API (ENDPOINTS)
 // -----------------------------------------------------------------------------
 
-// --- RUTA 1: GUARDAR MOVIMIENTO ---
+// --- RUTA: GUARDAR MOVIMIENTO (Venta, Gasto, Retiro) ---
 app.post('/api/movimientos', async (req, res) => {
     try {
-        console.log(`📥 RECIBIENDO: ${req.body.tipo} de $${req.body.monto}`);
-        
         const nuevoMov = new Movimiento(req.body);
-        await nuevoMov.save(); // GUARDADO FÍSICO EN NUBE
-        
-        console.log(`☁️ SUBIDO A ATLAS EXITOSAMENTE.`);
+        await nuevoMov.save();
+        console.log(`📝 REGISTRO GUARDADO: ${req.body.tipo} - $${req.body.monto}`);
         res.json({ ok: true });
     } catch (error) {
-        console.error("❌ Error al subir a la nube:", error);
+        console.error("Error al guardar:", error);
         res.status(500).json({ ok: false, error: "Error de servidor" });
     }
 });
 
-// --- RUTA 2: LEER HISTORIAL (PARA AUDITORÍA Y CAJA) ---
+// --- RUTA: LEER HISTORIAL (Últimos 300 para agilidad) ---
 app.get('/api/movimientos', async (req, res) => {
     try {
-        // Traer últimos 300 movimientos, ordenados por fecha descendente
         const lista = await Movimiento.find().sort({ timestamp: -1 }).limit(300);
         res.json(lista);
     } catch (error) {
@@ -142,33 +105,30 @@ app.get('/api/movimientos', async (req, res) => {
     }
 });
 
-// --- RUTA 3: BUSCAR CLIENTES (AUTOCOMPLETADO) ---
+// --- RUTA: BUSCADOR PREDICTIVO DE CLIENTES ---
 app.get('/api/clientes/:query', async (req, res) => {
-    const q = req.params.query;
     try {
         const resultados = await Cliente.find({ 
-            nombre: { $regex: q, $options: 'i' } 
+            nombre: { $regex: req.params.query, $options: 'i' } 
         }).limit(10);
         res.json(resultados);
-    } catch (error) { 
-        res.status(500).json([]); 
-    }
+    } catch (error) { res.status(500).json([]); }
 });
 
-// --- RUTA 4: CREAR O ACTUALIZAR CLIENTE (DEUDA) ---
+// --- RUTA: CREAR O ACTUALIZAR DEUDA CLIENTE ---
 app.post('/api/clientes', async (req, res) => {
     const { nombre, deuda, telefono } = req.body;
     try {
         let cliente = await Cliente.findOne({ nombre: nombre });
         
         if (cliente) {
-            // Si existe, actualizamos
+            // Si existe, actualizamos saldo
             cliente.deudaActual = deuda; 
             if(telefono) cliente.telefono = telefono;
             cliente.ultimaActualizacion = new Date();
             await cliente.save();
         } else {
-            // Si no, creamos
+            // Si no existe, creamos ficha nueva
             cliente = new Cliente({ 
                 nombre, 
                 telefono, 
@@ -176,74 +136,91 @@ app.post('/api/clientes', async (req, res) => {
             });
             await cliente.save();
         }
-        res.json({ ok: true, cliente });
-    } catch (error) { 
-        res.status(500).json({ error: error.message }); 
-    }
+        res.json({ ok: true });
+    } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// --- RUTA 5: LISTAR TODOS LOS DEUDORES ---
+// --- RUTA: LISTAR TODOS LOS DEUDORES ---
 app.get('/api/clientes', async (req, res) => {
     try {
         const todos = await Cliente.find();
         res.json(todos);
-    } catch (error) { 
-        res.status(500).json([]); 
-    }
+    } catch (error) { res.status(500).json([]); }
 });
 
-// --- RUTA 6: EL VEREDICTO (CÁLCULO MATEMÁTICO EN SERVIDOR) ---
+// --- RUTA: EL VEREDICTO (ESTADÍSTICAS POR FECHA) ---
+// CORREGIDO: Ahora soporta rango de fechas enviado desde el HTML
 app.post('/api/veredicto', async (req, res) => {
     try {
-        const movimientos = await Movimiento.find();
+        // Obtenemos fechas del cuerpo de la petición (si existen)
+        // El frontend puede enviar { fechaDesde: 'YYYY-MM-DD', fechaHasta: 'YYYY-MM-DD' }
+        const { fechaDesde, fechaHasta } = req.body;
         
-        let ventas = 0;
-        let gastos = 0;
-        let retiros = 0;
-        let cajaFisica = 0;
+        // Configurar filtro de búsqueda
+        let filtro = {};
+        
+        if (fechaDesde && fechaHasta) {
+            // Ajustamos las horas para cubrir todo el día
+            const desde = new Date(fechaDesde); desde.setHours(0,0,0,0);
+            const hasta = new Date(fechaHasta); hasta.setHours(23,59,59,999);
+            
+            filtro.timestamp = { $gte: desde, $lte: hasta };
+        }
+
+        // Buscamos movimientos que coincidan con el filtro
+        const movimientos = await Movimiento.find(filtro);
+        
+        let ventasTotales = 0;
+        let gastosTotales = 0;
+        let retirosCaja = 0;
+        let cajaFisicaTeorica = 0;
 
         movimientos.forEach(m => {
-            // SUMAR VENTAS
+            // 1. CÁLCULO DE VENTAS
             if(m.tipo === "VENTA") {
-                ventas += m.monto;
-                if(m.destinoFondos === "CAJA") cajaFisica += (m.pagoReal || 0);
+                ventasTotales += m.monto; // Valor de la mercadería vendida
+                
+                // Solo suma a la caja física si el destino fue CAJA (No MercadoPago)
+                if(m.destinoFondos === "CAJA") {
+                    cajaFisicaTeorica += (m.pagoReal || 0);
+                }
             }
-            // RESTAR GASTOS
+            
+            // 2. CÁLCULO DE GASTOS (Restan de la ganancia y de la caja)
             if(m.tipo === "GASTO") {
-                gastos += m.monto;
-                cajaFisica -= m.monto;
+                gastosTotales += m.monto;
+                cajaFisicaTeorica -= m.monto;
             }
-            // RESTAR RETIROS (Solo de caja física)
+            
+            // 3. CÁLCULO DE RETIROS (No restan ganancia, solo sacan billetes de caja)
             if(m.tipo.includes("RETIRO") || m.tipo.includes("CIERRE")) {
-                retiros += m.monto;
-                cajaFisica -= m.monto;
+                retirosCaja += m.monto;
+                cajaFisicaTeorica -= m.monto;
             }
         });
         
-        // CÁLCULO GANANCIA NETA
-        const gananciaNeta = ventas - gastos;
+        const gananciaNeta = ventasTotales - gastosTotales;
 
         res.json({ 
             gananciaNeta: gananciaNeta, 
-            ventas: ventas, 
-            gastos: gastos, 
-            diferenciaCaja: cajaFisica 
+            ventas: ventasTotales, 
+            gastos: gastosTotales, 
+            diferenciaCaja: cajaFisicaTeorica,
+            cantidadMovimientos: movimientos.length
         });
 
     } catch (error) { 
+        console.error("Error en veredicto:", error);
         res.status(500).json({ error: "Error calculando estadísticas" }); 
     }
 });
 
 // -----------------------------------------------------------------------------
-// 7. ENCENDIDO DEL MOTOR
+// 7. ENCENDIDO DEL SERVIDOR
 // -----------------------------------------------------------------------------
 app.listen(PORT, () => {
     console.log(" ");
-    console.log("██████████████████████████████████████████████████");
-    console.log("█  SISTEMA VISIÓN MOISÉS V5 - ONLINE             █");
-    console.log(`█  PUERTO ACTIVO: ${PORT}                           █`);
-    console.log("█  MODO: PRODUCCIÓN / NUBE                       █");
-    console.log("██████████████████████████████████████████████████");
-    console.log(" ");
+    console.log("██████████████████████████████████████");
+    console.log(`✅ SISTEMA ONLINE EN PUERTO: ${PORT}`);
+    console.log("██████████████████████████████████████");
 });
